@@ -3,6 +3,9 @@ import { createClient, type AuthError } from '@supabase/supabase-js';
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
 
+// Lido antes de criar o cliente: o Supabase limpa da URL os dados que os links de e-mail trazem.
+const initialUrlParams = new URLSearchParams(window.location.hash.slice(1) || window.location.search.slice(1));
+
 // Sem as variáveis de ambiente o app funciona só com o armazenamento local.
 export const supabase = url && key ? createClient(url, key) : null;
 
@@ -39,12 +42,23 @@ export async function sendConfirmationLink(input: SignupInput): Promise<StepResu
 
 // Erro devolvido pelo Supabase na URL quando o link é inválido ou expirou.
 export function linkErrorFromUrl(): string | null {
-  const params = new URLSearchParams(window.location.hash.slice(1) || window.location.search.slice(1));
-  const code = params.get('error_code');
-  if (!code && !params.get('error')) return null;
+  const code = initialUrlParams.get('error_code');
+  if (!code && !initialUrlParams.get('error')) return null;
   return code === 'otp_expired'
-    ? 'Este link de confirmação expirou ou já foi usado. Preencha seus dados para receber um novo.'
-    : 'Não foi possível confirmar seu e-mail por este link. Peça um novo link abaixo.';
+    ? 'Este link expirou ou já foi usado. Peça um novo link abaixo.'
+    : 'Não foi possível usar este link. Peça um novo link abaixo.';
+}
+
+// O site foi aberto pelo link de "Esqueci senha" do e-mail.
+export function isPasswordRecoveryLink(): boolean {
+  return initialUrlParams.get('type') === 'recovery';
+}
+
+// Envia o link de redefinição de senha; ele volta para este site, na tela de nova senha.
+export async function sendPasswordReset(email: string): Promise<StepResult> {
+  if (!supabase) return { ok: false, message: 'Recuperação de senha indisponível neste ambiente.' };
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
+  return error ? { ok: false, message: describe(error) } : { ok: true };
 }
 
 // Avisa quando o e-mail é confirmado em outra aba (o link abre uma aba nova).

@@ -3,7 +3,7 @@ import { TransactionForm } from './components/TransactionForm';
 import { Modal } from './components/ui';
 import { addMonths, currentMonth, monthLabel } from './lib/format';
 import { StoreProvider, useStore } from './lib/store';
-import { linkErrorFromUrl, loadSessionState, supabase, type SessionState } from './lib/supabase';
+import { isPasswordRecoveryLink, linkErrorFromUrl, loadSessionState, supabase, type SessionState } from './lib/supabase';
 import { LoadingScreen } from './components/LoadingScreen';
 import { Bills } from './pages/Bills';
 import { Budget } from './pages/Budget';
@@ -154,34 +154,34 @@ function Shell() {
   );
 }
 
-// Primeiro acesso: sem cadastro, mostra a tela de cadastro no lugar do app.
-// Tempo mínimo da tela de carregamento, para a animação não piscar em conexões rápidas.
-const MIN_LOADING_MS = 1800;
-
 type Boot = { status: 'loading' } | { status: 'app' } | { status: 'signup'; start: SignupStart };
 
 // Ao abrir o site, mostra a tela de carregamento enquanto confere a sessão no Supabase.
 // O perfil guardado no navegador não basta para entrar: é preciso sessão confirmada e com senha.
+// A tela de carregamento fica por cima até terminar a animação de saída; o login já é montado
+// por baixo para o logo saber até onde "voar".
 function Gate() {
   const { data, dispatch } = useStore();
   const [boot, setBoot] = useState<Boot>({ status: 'loading' });
+  const [loaderVisible, setLoaderVisible] = useState(true);
   const hasLocalProfile = !!data.profile;
 
   useEffect(() => {
     let alive = true;
-    const started = Date.now();
     const linkError = linkErrorFromUrl() ?? undefined;
     loadSessionState()
       .catch((): SessionState => ({ status: 'none' }))
-      .then(async (s) => {
-        const wait = MIN_LOADING_MS - (Date.now() - started);
-        if (wait > 0) await new Promise((r) => window.setTimeout(r, wait));
+      .then((s) => {
         if (!alive) return;
         // Remove da URL os tokens ou erros devolvidos pelo link de confirmação do e-mail.
         if (/access_token|error/.test(window.location.hash + window.location.search)) {
           window.history.replaceState(null, '', window.location.pathname);
         }
         if (!supabase) return setBoot(hasLocalProfile ? { status: 'app' } : { status: 'signup', start: { kind: 'details' } });
+        // Link de "Esqueci senha": abre direto na tela de nova senha.
+        if (s.status !== 'none' && isPasswordRecoveryLink()) {
+          return setBoot({ status: 'signup', start: { kind: 'password', input: s.input, reset: true } });
+        }
         if (s.status === 'ready') {
           dispatch({ type: 'setProfile', profile: { ...s.input, createdAt: new Date().toISOString(), synced: true } });
           return setBoot({ status: 'app' });
@@ -197,11 +197,24 @@ function Gate() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (boot.status === 'loading') return <LoadingScreen />;
-  if (boot.status === 'app' && data.profile) return <Shell />;
   // Sem perfil depois de estar no app = saiu da conta: volta para a tela de entrar.
   const start: SignupStart = boot.status === 'signup' ? boot.start : supabase ? { kind: 'login' } : { kind: 'details' };
-  return <Signup key={start.kind} start={start} onFinished={() => setBoot({ status: 'app' })} />;
+  const content = boot.status === 'loading' ? null
+    : boot.status === 'app' && data.profile ? <Shell />
+    : <Signup key={start.kind} start={start} intro={loaderVisible} onFinished={() => setBoot({ status: 'app' })} />;
+
+  return (
+    <>
+      {content}
+      {loaderVisible && (
+        <LoadingScreen
+          done={boot.status !== 'loading'}
+          flyTarget={boot.status === 'signup' ? '.signup-hero' : null}
+          onExited={() => setLoaderVisible(false)}
+        />
+      )}
+    </>
+  );
 }
 
 export default function App() {

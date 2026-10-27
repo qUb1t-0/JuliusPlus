@@ -1,8 +1,10 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { Mascot } from '../components/Mascot';
+import { PasswordInput } from '../components/PasswordInput';
 import { Field } from '../components/ui';
 import { useStore } from '../lib/store';
 import {
-  createPassword, loadSessionState, onSignedIn, sendConfirmationLink, signInWithPassword, supabase,
+  createPassword, loadSessionState, onSignedIn, sendConfirmationLink, sendPasswordReset, signInWithPassword, supabase,
   type SessionState, type SignupInput,
 } from '../lib/supabase';
 
@@ -19,15 +21,19 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const RESEND_SECONDS = 60;
 
 // Etapa em que o cadastro começa, decidida pelo App após conferir a sessão.
-export type SignupStart = { kind: 'details'; linkError?: string } | { kind: 'password'; input: SignupInput } | { kind: 'login' };
+export type SignupStart =
+  | { kind: 'details'; linkError?: string }
+  | { kind: 'password'; input: SignupInput; reset?: boolean }
+  | { kind: 'login' };
 
-type Step = SignupStart | { kind: 'email'; input: SignupInput };
+type Step = SignupStart | { kind: 'email'; input: SignupInput } | { kind: 'forgot'; email: string };
 
 type SignedIn = Exclude<SessionState, { status: 'none' }>;
 
 const STEP_NUMBER: Partial<Record<Step['kind'], number>> = { details: 1, email: 2, password: 3 };
 
-export function Signup({ start, onFinished }: { start: SignupStart; onFinished: () => void }) {
+// `intro`: enquanto a tela de carregamento leva o logo até o cartão, o cartão espera invisível.
+export function Signup({ start, intro = false, onFinished }: { start: SignupStart; intro?: boolean; onFinished: () => void }) {
   const { dispatch } = useStore();
   const [step, setStep] = useState<Step>(start);
 
@@ -42,12 +48,15 @@ export function Signup({ start, onFinished }: { start: SignupStart; onFinished: 
 
   return (
     <div className="signup">
-      <div className="signup-card">
+      <div className="jp-glow signup-glow" aria-hidden />
+      <div className={`signup-card ${intro ? 'is-intro' : ''}`}>
         <div className="signup-hero">
-          <img src="/julius-icon.svg" alt="" className="signup-icon" />
-          <h1 className="signup-title">Julius<span className="brand-plus">+</span></h1>
-          <p className="signup-tagline">Cada centavo conta!</p>
+          <Mascot size={120} />
+          <h1 className="signup-title">Julius<span className="jp-plus">+</span></h1>
+          <p className={`signup-tagline ${intro ? '' : 'jp-stamp'}`}>Cada centavo conta!</p>
         </div>
+        {/* A chave reinicia a animação de entrada a cada troca de etapa. */}
+        <div className="signup-body" key={step.kind}>
         {number && supabase && (
           <ol className="steps" aria-label={`Etapa ${number} de 3`}>
             {['Dados', 'E-mail', 'Senha'].map((label, i) => (
@@ -67,8 +76,12 @@ export function Signup({ start, onFinished }: { start: SignupStart; onFinished: 
         {step.kind === 'email' && (
           <CheckEmailStep input={step.input} onBack={() => setStep({ kind: 'details' })} onConfirmed={resume} />
         )}
-        {step.kind === 'password' && <PasswordStep input={step.input} onDone={() => finish(step.input, true)} />}
-        {step.kind === 'login' && <LoginStep onBack={() => setStep({ kind: 'details' })} onSignedIn={resume} />}
+        {step.kind === 'password' && <PasswordStep input={step.input} reset={step.reset} onDone={() => finish(step.input, true)} />}
+        {step.kind === 'login' && (
+          <LoginStep onBack={() => setStep({ kind: 'details' })} onForgot={(email) => setStep({ kind: 'forgot', email })} onSignedIn={resume} />
+        )}
+        {step.kind === 'forgot' && <ForgotStep initialEmail={step.email} onBack={() => setStep({ kind: 'login' })} />}
+        </div>
       </div>
     </div>
   );
@@ -183,10 +196,9 @@ function passwordProblems(pw: string): string[] {
   return out;
 }
 
-function PasswordStep({ input, onDone }: { input: SignupInput; onDone: () => void }) {
+function PasswordStep({ input, reset = false, onDone }: { input: SignupInput; reset?: boolean; onDone: () => void }) {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
-  const [show, setShow] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [serverError, setServerError] = useState('');
@@ -212,25 +224,24 @@ function PasswordStep({ input, onDone }: { input: SignupInput; onDone: () => voi
   return (
     <form className="form signup-form" onSubmit={submit} noValidate>
       <div>
-        <h2>E-mail confirmado! Agora crie sua senha</h2>
+        <h2>{reset ? 'Crie uma nova senha' : 'E-mail confirmado! Agora crie sua senha'}</h2>
         <p className="muted small">Você vai usar <strong>{input.email}</strong> e esta senha para entrar no Julius+.</p>
       </div>
       {/* Campo de usuário oculto ajuda o gerenciador de senhas a salvar o par e-mail + senha. */}
       <input type="email" autoComplete="username" value={input.email} readOnly hidden />
-      <Field label="Senha" error={shown.password} hint={!submitted ? 'Mínimo de 8 caracteres, com letras e números.' : undefined}>
-        <input type={show ? 'text' : 'password'} autoComplete="new-password" autoFocus value={password} onChange={(e) => setPassword(e.target.value)} aria-invalid={!!shown.password} />
+      <Field label={reset ? 'Nova senha' : 'Senha'} error={shown.password} hint={!submitted ? 'Mínimo de 8 caracteres, com letras e números.' : undefined}>
+        <PasswordInput autoComplete="new-password" autoFocus value={password} onChange={(e) => setPassword(e.target.value)} aria-invalid={!!shown.password} />
       </Field>
       <Field label="Confirme a senha" error={shown.confirm}>
-        <input type={show ? 'text' : 'password'} autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} aria-invalid={!!shown.confirm} />
+        <PasswordInput autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} aria-invalid={!!shown.confirm} />
       </Field>
-      <label className="check"><input type="checkbox" checked={show} onChange={(e) => setShow(e.target.checked)} />Mostrar senha</label>
       {serverError && <p className="callout warn" role="alert">{serverError}</p>}
-      <button type="submit" className="btn primary block" disabled={saving}>{saving ? 'Salvando…' : 'Criar senha e entrar'}</button>
+      <button type="submit" className="btn primary block" disabled={saving}>{saving ? 'Salvando…' : reset ? 'Salvar nova senha e entrar' : 'Criar senha e entrar'}</button>
     </form>
   );
 }
 
-function LoginStep({ onBack, onSignedIn }: { onBack: () => void; onSignedIn: (s: SignedIn) => void }) {
+function LoginStep({ onBack, onForgot, onSignedIn }: { onBack: () => void; onForgot: (email: string) => void; onSignedIn: (s: SignedIn) => void }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -250,20 +261,73 @@ function LoginStep({ onBack, onSignedIn }: { onBack: () => void; onSignedIn: (s:
   }
 
   return (
-    <form className="form signup-form" onSubmit={submit} noValidate>
-      <div>
-        <h2>Entrar no Julius+</h2>
-        <p className="muted small">Use o e-mail e a senha do seu cadastro.</p>
-      </div>
+    <form className="form signup-form" onSubmit={submit} noValidate aria-label="Entrar no Julius+">
       <Field label="E-mail">
         <input type="email" autoComplete="username" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} />
       </Field>
-      <Field label="Senha">
-        <input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
-      </Field>
+      <div className="field">
+        <div className="field-label-row">
+          <label className="field-label" htmlFor="login-password">Senha</label>
+          <button type="button" className="link" onClick={() => onForgot(email.trim().toLowerCase())}>Esqueci senha</button>
+        </div>
+        <PasswordInput id="login-password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+      </div>
       {error && <p className="callout warn" role="alert">{error}</p>}
       <button type="submit" className="btn primary block" disabled={busy}>{busy ? 'Entrando…' : 'Entrar'}</button>
       <p className="muted small center">Ainda não tem cadastro? <button type="button" className="link" onClick={onBack}>Criar cadastro</button></p>
+    </form>
+  );
+}
+
+function ForgotStep({ initialEmail, onBack }: { initialEmail: string; onBack: () => void }) {
+  const [email, setEmail] = useState(initialEmail);
+  const [error, setError] = useState('');
+  const [sentTo, setSentTo] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setError('');
+    const value = email.trim().toLowerCase();
+    if (!EMAIL_RE.test(value)) return setError('Informe um e-mail válido (ex.: voce@email.com).');
+    setBusy(true);
+    const res = await sendPasswordReset(value);
+    setBusy(false);
+    if (!res.ok) return setError(res.message);
+    setSentTo(value);
+  }
+
+  if (sentTo) {
+    return (
+      <div className="form signup-form">
+        <div className="mail-sent" aria-hidden>📬</div>
+        <div>
+          <h2>Confira seu e-mail</h2>
+          <p className="muted small">
+            Se houver um cadastro com <strong>{sentTo}</strong>, enviamos um link para criar uma nova senha.
+            Clique em <strong>“Reset Password”</strong> no e-mail: o Julius+ vai abrir na tela de nova senha.
+          </p>
+        </div>
+        <ul className="hint-list small muted">
+          <li>O e-mail vem de <em>Supabase Auth</em> — confira também a caixa de spam.</li>
+          <li>O link vale por 1 hora e só pode ser usado uma vez.</li>
+        </ul>
+        <button type="button" className="btn ghost block" onClick={onBack}>Voltar para o login</button>
+      </div>
+    );
+  }
+
+  return (
+    <form className="form signup-form" onSubmit={submit} noValidate>
+      <div>
+        <h2>Esqueci minha senha</h2>
+        <p className="muted small">Informe o e-mail do cadastro e enviaremos um link para criar uma nova senha.</p>
+      </div>
+      <Field label="E-mail" error={error}>
+        <input type="email" autoComplete="username" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} aria-invalid={!!error} />
+      </Field>
+      <button type="submit" className="btn primary block" disabled={busy}>{busy ? 'Enviando…' : 'Enviar link de redefinição'}</button>
+      <p className="muted small center"><button type="button" className="link" onClick={onBack}>← Voltar para o login</button></p>
     </form>
   );
 }

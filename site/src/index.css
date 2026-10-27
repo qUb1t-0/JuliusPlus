@@ -276,10 +276,13 @@ input[aria-invalid='true'], select[aria-invalid='true'] { border-color: var(--ex
 @keyframes toast { 0% { opacity: 0; transform: translate(-50%, 8px); } 5%, 90% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; visibility: hidden; } }
 
 /* Tela de carregamento (design "Tela de carregamento") — sempre escura, independente do tema */
-.loading { position: relative; min-height: 100vh; width: 100%; overflow: hidden; background: #11172a; color: #eef1f8; font-family: Inter, system-ui, sans-serif; display: flex; align-items: center; justify-content: center; padding: 48px 16px; box-sizing: border-box; }
+.loading { position: fixed; inset: 0; z-index: 100; overflow: hidden; background: #11172a; color: #eef1f8; font-family: Inter, system-ui, sans-serif; display: flex; align-items: center; justify-content: center; padding: 48px 16px; box-sizing: border-box; }
 .loading-glow { position: absolute; left: 50%; top: 42%; width: 900px; height: 900px; margin: -450px 0 0 -450px; border-radius: 50%; background: radial-gradient(circle, rgb(53 192 138 / 45%) 0%, rgb(53 192 138 / 12%) 40%, rgb(17 23 42 / 0%) 70%); pointer-events: none; }
 .loading-stack { position: relative; display: flex; flex-direction: column; align-items: center; gap: 28px; width: 100%; max-width: 420px; }
-.loading-art { position: relative; width: 240px; height: 240px; }
+.loading-art { position: relative; width: 240px; height: 240px; will-change: transform; }
+.loading-title { will-change: transform; }
+.loading-info { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 28px; transition: opacity 0.8s ease, transform 0.8s ease; }
+.loading.is-leaving .loading-info { opacity: 0; transform: translateY(12px); }
 .loading-title { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 64px; line-height: 1; letter-spacing: 2px; color: #fff !important; }
 .loading-title .jp-plus { color: #f2c14e; }
 .loading-meter { width: 100%; display: flex; flex-direction: column; gap: 10px; }
@@ -307,18 +310,56 @@ input[aria-invalid='true'], select[aria-invalid='true'] { border-color: var(--ex
   .jp-pop, .jp-wobble, .jp-brow, .jp-coin, .jp-plus, .jp-glow, .jp-tip { animation: none !important; }
 }
 
+/* Campo de senha com olho */
+.password-input { position: relative; }
+.password-input input { padding-right: 46px; }
+.password-toggle { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 38px; height: 38px; border: 0; border-radius: 8px; background: none; color: var(--muted); cursor: pointer; display: grid; place-items: center; }
+.password-toggle:hover, .password-toggle[aria-pressed='true'] { color: var(--brand); }
+.field-label-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.field-label-row .link { font-size: 0.82rem; padding: 0; }
+
 /* Ajustes › Conta */
 .account-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .account-avatar { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--navy); color: var(--coin); font-family: var(--font-display); font-size: 1.4rem; flex: none; }
 .account-name { font-weight: 650; }
 
 /* Cadastro de primeiro acesso */
-.signup { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; background: radial-gradient(circle at 50% 0%, #2bb57e 0%, var(--brand-bright) 30%, var(--navy) 75%); }
-.signup-card { width: min(440px, 100%); background: var(--surface); border-radius: 24px; overflow: hidden; box-shadow: 0 24px 60px rgb(0 0 0 / 30%); }
+/* Mesmo fundo escuro com brilho pulsante da tela de carregamento, para a transição ser contínua. */
+.signup { position: relative; min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; background: #11172a; overflow: hidden; }
+.signup-glow { position: absolute; left: 50%; top: 42%; width: 900px; height: 900px; margin: -450px 0 0 -450px; border-radius: 50%; background: radial-gradient(circle, rgb(53 192 138 / 45%) 0%, rgb(53 192 138 / 12%) 40%, rgb(17 23 42 / 0%) 70%); pointer-events: none; }
+.signup-card { position: relative; width: min(440px, 100%); background: var(--surface); border-radius: 24px; overflow: hidden; box-shadow: 0 24px 60px rgb(0 0 0 / 40%); }
 .signup-hero { display: grid; justify-items: center; gap: 4px; padding: 28px 24px 20px; background: var(--navy); color: #fff; position: relative; }
-.signup-icon { width: 120px; height: 120px; }
-.signup-title { font-family: var(--font-display); font-weight: 400; font-size: 2.6rem; letter-spacing: 0.05em; color: #fff !important; }
+.signup-title { font-family: var(--font-display); font-weight: 400; font-size: 2.6rem; line-height: 1.1; letter-spacing: 0.05em; color: #fff !important; }
+.signup-title .jp-plus { color: var(--coin); }
 .signup-tagline { font-family: var(--font-display); letter-spacing: 0.08em; color: #fff; background: var(--banner); padding: 2px 14px; border-radius: 6px; border: 2px solid #fff; transform: rotate(-2deg); }
+.signup-tagline.jp-wobble { animation-delay: 0.4s; transform-origin: 50% 50%; }
+
+/* Enquanto o logo "voa" do carregamento, o cartão espera com o topo vazio e o resto invisível. */
+.signup-card.is-intro .signup-hero .mascot,
+.signup-card.is-intro .signup-title { visibility: hidden; }
+.signup-card.is-intro .signup-tagline,
+.signup-card.is-intro .signup-body { opacity: 0; }
+.signup-card.is-intro { box-shadow: none; background: transparent; }
+.signup-card.is-intro .signup-hero { background: transparent; }
+.signup-card { transition: background-color 0.5s ease, box-shadow 0.5s ease; }
+.signup-hero { transition: background-color 0.5s ease; }
+
+/* Entrada do conteúdo: faixa "carimbada" e campos subindo um a um (também a cada troca de etapa). */
+@keyframes jp-stamp { 0% { transform: scale(1.6) rotate(-10deg); opacity: 0; } 70% { transform: scale(0.95) rotate(-1deg); opacity: 1; } 100% { transform: scale(1) rotate(-2deg); opacity: 1; } }
+@keyframes jp-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+.signup-tagline.jp-stamp { animation: jp-stamp 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both, jp-wobble 2.4s ease-in-out 0.9s infinite; }
+.signup-body .steps, .signup-form > * { animation: jp-rise 0.45s ease both; }
+.signup-form > *:nth-child(1) { animation-delay: 0.05s; }
+.signup-form > *:nth-child(2) { animation-delay: 0.12s; }
+.signup-form > *:nth-child(3) { animation-delay: 0.19s; }
+.signup-form > *:nth-child(4) { animation-delay: 0.26s; }
+.signup-form > *:nth-child(5) { animation-delay: 0.33s; }
+.signup-form > *:nth-child(n + 6) { animation-delay: 0.4s; }
+.signup-form .btn.primary { transition: transform 0.15s ease, background-color 0.2s ease; }
+.signup-form .btn.primary:active:not(:disabled) { transform: scale(0.97); }
+@media (prefers-reduced-motion: reduce) {
+  .signup-tagline.jp-stamp, .signup-body .steps, .signup-form > * { animation: none !important; }
+}
 .signup-form { padding: 24px; }
 .signup-form h2 { font-size: 1.25rem; margin-bottom: 4px; }
 .center { text-align: center; }
