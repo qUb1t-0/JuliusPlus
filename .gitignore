@@ -1,0 +1,21 @@
+# APK de terceiros (Oinc): não versionar nem redistribuir
+apk/
+*.apk
+
+# Dependências e builds
+node_modules/
+dist/
+.vercel/
+
+# Segredos e configurações locais
+.env
+.env.*
+!.env.example
+*.local
+
+# Sistema / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" role="img" aria-label="Figurinha: Seu Centavo, pai careca de uniforme azul, sobrancelha levantada, segurando uma calculadora, com a faixa Cada centavo conta">
+  <defs>
+    <clipPath id="badge"><circle cx="320" cy="300" r="262"></circle></clipPath>
+    <filter id="drop" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000000" flood-opacity="0.25"></feDropShadow>
+    </filter>
+  </defs>
+
+  <g filter="url(#drop)">
+    <circle cx="320" cy="300" r="276" fill="#FFFFFF"></circle>
+  </g>
+  <circle cx="320" cy="300" r="262" fill="#1F9D6B"></circle>
+  <circle cx="320" cy="300" r="230" fill="none" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="3" stroke-dasharray="6 12"></circle>
+
+  <g clip-path="url(#badge)">
+    <path d="M110 640 Q118 460 236 430 L404 430 Q522 460 530 640 Z" fill="#2B3A67"></path>
+    <path d="M236 430 L320 520 L404 430 Z" fill="#22305A"></path>
+    <path d="M272 430 L320 492 L368 430 Z" fill="#FFFFFF"></path>
+    <path d="M236 430 L292 430 L320 500 L262 478 Z" fill="#3A4C82"></path>
+    <path d="M404 430 L348 430 L320 500 L378 478 Z" fill="#3A4C82"></path>
+    <line x1="320" y1="500" x2="320" y2="640" stroke="#1C2748" stroke-width="4"></line>
+    <circle cx="320" cy="540" r="6" fill="#C9D3EE"></circle>
+    <circle cx="320" cy="590" r="6" fill="#C9D3EE"></circle>
+    <ellipse cx="420" cy="508" rx="50" ry="22" fill="#FFFFFF" stroke="#1C2748" stroke-width="4"></ellipse>
+    <text x="420" y="516" text-anchor="middle" font-family="Bangers, system-ui, sans-serif" font-size="22" fill="#2B3A67" letter-spacing="1">CENTAVO</text>
+
+    <rect x="284" y="372" width="72" height="70" rx="20" fill="#6A3F24"></rect>
+
+    <ellipse cx="212" cy="270" rx="20" ry="28" fill="#7A4A2B"></ellipse>
+    <ellipse cx="428" cy="270" rx="20" ry="28" fill="#7A4A2B"></ellipse>
+    <ellipse cx="214" cy="270" rx="9" ry="14" fill="#5E3820"></ellipse>
+    <ellipse cx="426" cy="270" rx="9" ry="14" fill="#5E3820"></ellipse>
+
+    <ellipse cx="320" cy="258" rx="110" ry="124" fill="#7A4A2B"></ellipse>
+    <ellipse cx="278" cy="172" rx="34" ry="14" fill="#FFFFFF" fill-opacity="0.28" transform="rotate(-14 278 172)"></ellipse>
+    <ellipse cx="312" cy="160" rx="8" ry="5" fill="#FFFFFF" fill-opacity="0.28"></ellipse>
+
+    <path d="M250 214 Q276 188 302 210" fill="none" stroke="#24150C" stroke-width="12" stroke-linecap="round"></path>
+    <path d="M340 230 Q366 222 392 232" fill="none" stroke="#24150C" stroke-width="12" stroke-linecap="round"></path>
+
+    <ellipse cx="276" cy="244" rx="20" ry="17" fill="#FFFFFF"></ellipse>
+    <circle cx="281" cy="247" r="9" fill="#1A0F08"></circle>
+    <circle cx="284" cy="243" r="3" fill="#FFFFFF"></circle>
+    <path d="M346 250 Q366 240 386 250 Q366 258 346 250 Z" fill="#FFFFFF"></path>
+    <circle cx="370" cy="250" r="6" fill="#1A0F08"></circle>
+    <path d="M343 248 Q366 236 389 248" fill="none" stroke="#24150C" stroke-width="5" stroke-linecap="round"></path>
+
+    <path d="M308 262 Q300 296 296 300 Q320 314 344 300 Q340 296 332 262" fill="#6A3F24"></path>
+    <ellipse cx="320" cy="300" rx="28" ry="15" fill="#5E3820"></ellipse>
+
+    <path d="M276 330 Q320 312 364 328 Q350 338 320 332 Q290 338 276 330 Z" fill="#1D120B"></path>
+    <path d="M296 352 Q320 404 344 352 Q332 362 320 362 Q308 362 296 352 Z" fill="#1D120B"></path>
+    <path d="M286 342 Q326 360 360 334" fill="none" stroke="#2A170D" stroke-width="6" stroke-linecap="round"></path>
+    <path d="M296 344 Q326 356 352 340 Q326 352 296 344 Z" fill="#FFFFFF"></path>
+  </g>
+
+  <g transform="rotate(-12 190 470)">
+    <rect x="128" y="392" width="118" height="156" rx="14" fill="#F2C14E" stroke="#1C2748" stroke-width="5"></rect>
+    <rect x="144" y="408" width="86" height="38" rx="6" fill="#20352B"></rect>
+    <text x="224" y="436" text-anchor="end" font-family="Bangers, system-ui, sans-serif" font-size="24" fill="#8CF2B8" letter-spacing="1">0,49</text>
+    <rect x="146" y="458" width="20" height="16" rx="4" fill="#1C2748"></rect>
+    <rect x="177" y="458" width="20" height="16" rx="4" fill="#1C2748"></rect>
+    <rect x="208" y="458" width="20" height="16" rx="4" fill="#C2453A"></rect>
+    <rect x="146" y="484" width="20" height="16" rx="4" fill="#1C2748"></rect>
+    <rect x="177" y="484" width="20" height="16" rx="4" fill="#1C2748"></rect>
+    <rect x="208" y="484" width="20" height="16" rx="4" fill="#1C2748"></rect>
+  </g>
+  <ellipse cx="236" cy="470" rx="22" ry="14" fill="#7A4A2B" stroke="#1C2748" stroke-width="4"></ellipse>
+  <ellipse cx="240" cy="496" rx="22" ry="14" fill="#7A4A2B" stroke="#1C2748" stroke-width="4"></ellipse>
+  <ellipse cx="238" cy="522" rx="20" ry="13" fill="#7A4A2B" stroke="#1C2748" stroke-width="4"></ellipse>
+
+  <circle cx="492" cy="150" r="38" fill="#F2C14E" stroke="#B9862A" stroke-width="7"></circle>
+  <text x="492" y="163" text-anchor="middle" font-family="Bangers, system-ui, sans-serif" font-size="34" fill="#8A5E12">R$</text>
+  <circle cx="148" cy="170" r="24" fill="#F2C14E" stroke="#B9862A" stroke-width="5"></circle>
+  <text x="148" y="179" text-anchor="middle" font-family="Bangers, system-ui, sans-serif" font-size="24" fill="#8A5E12">¢</text>
+  <path d="M520 214 l6 14 l14 6 l-14 6 l-6 14 l-6 -14 l-14 -6 l14 -6 Z" fill="#FFFFFF"></path>
+  <path d="M110 240 l4 9 l9 4 l-9 4 l-4 9 l-4 -9 l-9 -4 l9 -4 Z" fill="#FFFFFF"></path>
+
+  <g filter="url(#drop)">
+    <path d="M60 520 L92 548 L60 576 L120 576 L120 520 Z" fill="#C2453A"></path>
+    <path d="M580 520 L548 548 L580 576 L520 576 L520 520 Z" fill="#C2453A"></path>
+    <rect x="92" y="506" width="456" height="60" rx="10" fill="#E35A4C" stroke="#FFFFFF" stroke-width="6"></rect>
+  </g>
+  <text x="320" y="550" text-anchor="middle" font-family="Bangers, system-ui, sans-serif" font-size="40" fill="#FFFFFF" letter-spacing="2">CADA CENTAVO CONTA!</text>
+</svg>
