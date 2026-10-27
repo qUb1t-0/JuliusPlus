@@ -186,7 +186,11 @@ function Gate() {
           dispatch({ type: 'setProfile', profile: { ...s.input, createdAt: new Date().toISOString(), synced: true } });
           return setBoot({ status: 'app' });
         }
-        setBoot({ status: 'signup', start: s.status === 'needs-password' ? { kind: 'password', input: s.input } : { kind: 'details', linkError } });
+        // Primeiro acesso abre na tela de entrar; link vencido vai para o cadastro, que explica como pedir outro.
+        setBoot({
+          status: 'signup',
+          start: s.status === 'needs-password' ? { kind: 'password', input: s.input } : linkError ? { kind: 'details', linkError } : { kind: 'login' },
+        });
       });
     return () => { alive = false; };
     // Executa uma vez, na abertura do site.
