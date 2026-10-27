@@ -276,7 +276,8 @@ input[aria-invalid='true'], select[aria-invalid='true'] { border-color: var(--ex
 @keyframes toast { 0% { opacity: 0; transform: translate(-50%, 8px); } 5%, 90% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; visibility: hidden; } }
 
 /* Tela de carregamento (design "Tela de carregamento") — sempre escura, independente do tema */
-.loading { position: fixed; inset: 0; z-index: 100; overflow: hidden; background: #11172a; color: #eef1f8; font-family: Inter, system-ui, sans-serif; display: flex; align-items: center; justify-content: center; padding: 48px 16px; box-sizing: border-box; }
+/* max-width/margin anulam a regra global de `main` (largura do conteúdo do app), que descentralizava a tela em monitores largos. */
+.loading { position: fixed; inset: 0; z-index: 100; max-width: none; margin: 0; overflow: hidden; background: #11172a; color: #eef1f8; font-family: Inter, system-ui, sans-serif; display: flex; align-items: center; justify-content: center; padding: 48px 16px; box-sizing: border-box; }
 .loading-glow { position: absolute; left: 50%; top: 42%; width: 900px; height: 900px; margin: -450px 0 0 -450px; border-radius: 50%; background: radial-gradient(circle, rgb(53 192 138 / 45%) 0%, rgb(53 192 138 / 12%) 40%, rgb(17 23 42 / 0%) 70%); pointer-events: none; }
 .loading-stack { position: relative; display: flex; flex-direction: column; align-items: center; gap: 28px; width: 100%; max-width: 420px; }
 .loading-art { position: relative; width: 240px; height: 240px; will-change: transform; }
@@ -324,6 +325,10 @@ input[aria-invalid='true'], select[aria-invalid='true'] { border-color: var(--ex
 .account-name { font-weight: 650; }
 
 /* Cadastro de primeiro acesso */
+/* Login, cadastro e carregamento sem barra de rolagem visível (a página continua rolando se o cartão não couber). */
+html:has(.signup), html:has(.loading) { scrollbar-width: none; }
+html:has(.signup)::-webkit-scrollbar, html:has(.loading)::-webkit-scrollbar { display: none; }
+
 /* Mesmo fundo escuro com brilho pulsante da tela de carregamento, para a transição ser contínua. */
 .signup { position: relative; min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; background: #11172a; overflow: hidden; }
 .signup-glow { position: absolute; left: 50%; top: 42%; width: 900px; height: 900px; margin: -450px 0 0 -450px; border-radius: 50%; background: radial-gradient(circle, rgb(53 192 138 / 45%) 0%, rgb(53 192 138 / 12%) 40%, rgb(17 23 42 / 0%) 70%); pointer-events: none; }
