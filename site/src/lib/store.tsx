@@ -28,6 +28,7 @@ type Action =
   | { type: 'deleteCategory'; id: string }
   | { type: 'setSettings'; settings: Partial<Settings> }
   | { type: 'setProfile'; profile: Profile }
+  | { type: 'clearProfile' }
   | { type: 'replaceAll'; data: AppData };
 
 function upsert<T extends { id: string }>(list: T[], item: T): T[] {
@@ -100,6 +101,9 @@ function reducer(state: AppData, a: Action): AppData {
       return { ...state, settings: { ...state.settings, ...a.settings } };
     case 'setProfile':
       return { ...state, profile: a.profile };
+    case 'clearProfile':
+      // Ao sair da conta, só o perfil é removido; os lançamentos ficam neste navegador.
+      return { ...state, profile: undefined };
     case 'replaceAll':
       // Restaurar backup ou zerar dados não desfaz o cadastro do usuário.
       return { ...a.data, profile: a.data.profile ?? state.profile };

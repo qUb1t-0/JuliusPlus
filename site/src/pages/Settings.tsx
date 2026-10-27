@@ -3,6 +3,7 @@ import { Field } from '../components/ui';
 import { centsToInput, parseMoney, todayISO } from '../lib/format';
 import { demoData, emptyData } from '../lib/seed';
 import { isAppData, useStore } from '../lib/store';
+import { signOut } from '../lib/supabase';
 import type { Kind, Settings as SettingsT } from '../types';
 
 export function Settings() {
@@ -11,6 +12,7 @@ export function Settings() {
   const [msg, setMsg] = useState('');
   const [threshold, setThreshold] = useState(centsToInput(data.settings.smallExpenseThreshold));
   const [newCat, setNewCat] = useState({ name: '', emoji: '🏷️', group: '', kind: 'expense' as Kind });
+  const [loggingOut, setLoggingOut] = useState(false);
 
   function backup() {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -42,12 +44,37 @@ export function Settings() {
     setMsg('Categoria criada.');
   }
 
+  async function logout() {
+    if (!confirm('Sair da sua conta neste aparelho? Seus lançamentos continuam salvos neste navegador.')) return;
+    setLoggingOut(true);
+    const res = await signOut();
+    setLoggingOut(false);
+    if (!res.ok) return setMsg(res.message);
+    // Ao entrar de novo, o app abre no Início e não em Ajustes.
+    window.history.replaceState(null, '', window.location.pathname);
+    dispatch({ type: 'clearProfile' });
+  }
+
   const set = (s: Partial<SettingsT>) => dispatch({ type: 'setSettings', settings: s });
   const custom = data.categories.filter((c) => c.custom);
+  const profile = data.profile;
 
   return (
     <div className="page">
       {msg && <p className="toast" role="status" onAnimationEnd={() => setMsg('')}>{msg}</p>}
+      {profile && (
+        <section className="card account">
+          <header className="card-head"><h2>Conta</h2></header>
+          <div className="account-row">
+            <span className="account-avatar" aria-hidden>{profile.name.trim().charAt(0).toUpperCase()}</span>
+            <div className="grow">
+              <p className="account-name">{profile.name}</p>
+              <p className="muted small">{profile.email}</p>
+            </div>
+            <button className="btn danger" onClick={logout} disabled={loggingOut}>{loggingOut ? 'Saindo…' : 'Sair da conta'}</button>
+          </div>
+        </section>
+      )}
       <section className="card">
         <header className="card-head"><h2>Preferências</h2></header>
         <label className="check"><input type="checkbox" checked={data.settings.hideValues} onChange={(e) => set({ hideValues: e.target.checked })} />Ocultar valores na tela (modo discreto)</label>
