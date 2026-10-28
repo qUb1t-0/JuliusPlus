@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Select } from '../components/Select';
 import { TransactionForm } from '../components/TransactionForm';
 import { Empty, Modal, Money } from '../components/ui';
 import { addMonthsToDate, dayLabel, monthLabel } from '../lib/format';
@@ -84,13 +85,10 @@ export function Transactions({ month }: { month: string }) {
       <div className="toolbar">
         <input type="search" className="grow" placeholder="Buscar descrição, categoria ou observação" aria-label="Buscar transações"
           value={query} onChange={(e) => setQuery(e.target.value)} />
-        <select aria-label="Filtrar por tipo" value={kind} onChange={(e) => setKind(e.target.value as typeof kind)}>
-          <option value="all">Todas</option><option value="expense">Despesas</option><option value="income">Receitas</option>
-        </select>
-        <select aria-label="Filtrar por categoria" value={category} onChange={(e) => setCategory(e.target.value)}>
-          <option value="">Todas as categorias</option>
-          {data.categories.map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>)}
-        </select>
+        <Select aria-label="Filtrar por tipo" value={kind} onChange={setKind}
+          options={[{ value: 'all', label: 'Todas' }, { value: 'expense', label: 'Despesas' }, { value: 'income', label: 'Receitas' }]} />
+        <Select aria-label="Filtrar por categoria" value={category} onChange={setCategory}
+          options={[{ value: '', label: 'Todas as categorias' }, ...data.categories.map((c) => ({ value: c.id, label: `${c.emoji} ${c.name}` }))]} />
         <button className="btn ghost" onClick={exportCsv} disabled={!list.length}>Exportar CSV</button>
         <button className="btn ghost" onClick={() => setShowTrash(true)}>Lixeira{trash.length ? ` (${trash.length})` : ''}</button>
       </div>

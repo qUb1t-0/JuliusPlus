@@ -20,9 +20,9 @@ export type Page = 'home' | 'transactions' | 'budget' | 'bills' | 'goals' | 'ins
 
 const NAV: { id: Page; label: string; icon: string; mobile?: boolean }[] = [
   { id: 'home', label: 'Início', icon: '🏡', mobile: true },
-  { id: 'transactions', label: 'Transações', icon: '🧾', mobile: true },
   { id: 'budget', label: 'Orçamento', icon: '🎯', mobile: true },
   { id: 'bills', label: 'Contas a pagar', icon: '📅' },
+  { id: 'transactions', label: 'Transações', icon: '🧾', mobile: true },
   { id: 'goals', label: 'Metas', icon: '🏁', mobile: true },
   { id: 'insights', label: 'Insights', icon: '📊' },
   { id: 'settings', label: 'Ajustes', icon: '⚙️' },
@@ -82,7 +82,7 @@ function Shell() {
     <div className="app">
       <a href="#main" className="skip">Pular para o conteúdo</a>
       <aside className="sidebar">
-        <div className="brand"><img className="brand-mark" src="/julius-icon.svg" alt="" /> <span>Julius<span className="brand-plus">+</span></span></div>
+        <div className="brand"><img className="brand-mark" src="/julius-icon.svg" alt="" /> <span className="brand-name"><span className="brand-word">Julius</span><span className="brand-plus">+</span></span></div>
         <nav aria-label="Principal">
           <ul>
             {NAV.map((n) => (
@@ -94,7 +94,7 @@ function Shell() {
             ))}
           </ul>
         </nav>
-        <button className="btn primary block" onClick={() => setAdding(true)}>+ Nova transação <kbd>N</kbd></button>
+        <button className="btn primary block" onClick={() => setAdding(true)}>+ Nova transação</button>
         <ThemeToggle />
       </aside>
 

@@ -71,13 +71,13 @@ export function Budget({ month }: { month: string }) {
       )}
 
       <Modal title="Editar orçamento" open={editing} onClose={() => setEditing(false)}>
-        {editing && <BudgetForm budget={data.budget} suggestion={Math.round(s.income * 0.8)} onSave={(b) => { dispatch({ type: 'setBudget', budget: b }); setEditing(false); }} onCancel={() => setEditing(false)} />}
+        {editing && <BudgetForm budget={data.budget} suggestion={Math.round(s.income * 0.8)} onSave={(b) => { dispatch({ type: 'setBudget', budget: b }); setEditing(false); }} />}
       </Modal>
     </div>
   );
 }
 
-function BudgetForm({ budget, suggestion, onSave, onCancel }: { budget: BudgetT; suggestion: number; onSave: (b: BudgetT) => void; onCancel: () => void }) {
+function BudgetForm({ budget, suggestion, onSave }: { budget: BudgetT; suggestion: number; onSave: (b: BudgetT) => void }) {
   const { data } = useStore();
   const cats = data.categories.filter((c) => c.kind === 'expense');
   const [total, setTotal] = useState(budget.total ? centsToInput(budget.total) : '');
@@ -112,7 +112,6 @@ function BudgetForm({ budget, suggestion, onSave, onCancel }: { budget: BudgetT;
         ))}
       </div>
       <div className="form-actions">
-        <button className="btn ghost" onClick={onCancel}>Cancelar</button>
         <button className="btn primary" onClick={save}>Salvar orçamento</button>
       </div>
     </div>

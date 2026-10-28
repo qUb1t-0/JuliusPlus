@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { DatePicker } from '../components/DatePicker';
 import { Empty, Field, Modal, Money, Progress } from '../components/ui';
 import { centsToInput, currentMonth, money, monthLabel, parseMoney, pct, uid } from '../lib/format';
 import { useStore } from '../lib/store';
@@ -52,13 +53,13 @@ export function Goals() {
         {editing && <GoalForm goal={editing === 'new' ? undefined : editing} onDone={() => setEditing(null)} />}
       </Modal>
       <Modal title={depositFor ? `Movimentar “${depositFor.name}”` : ''} open={!!depositFor} onClose={() => setDepositFor(null)}>
-        {depositFor && <DepositForm goal={depositFor} onDone={(saved) => { dispatch({ type: 'upsertGoal', goal: { ...depositFor, saved } }); setDepositFor(null); }} onCancel={() => setDepositFor(null)} />}
+        {depositFor && <DepositForm goal={depositFor} onDone={(saved) => { dispatch({ type: 'upsertGoal', goal: { ...depositFor, saved } }); setDepositFor(null); }} />}
       </Modal>
     </div>
   );
 }
 
-function DepositForm({ goal, onDone, onCancel }: { goal: Goal; onDone: (saved: number) => void; onCancel: () => void }) {
+function DepositForm({ goal, onDone }: { goal: Goal; onDone: (saved: number) => void }) {
   const [value, setValue] = useState('');
   const [error, setError] = useState('');
   function apply(sign: 1 | -1) {
@@ -72,7 +73,6 @@ function DepositForm({ goal, onDone, onCancel }: { goal: Goal; onDone: (saved: n
       <p className="muted">Guardado até agora: {money(goal.saved)}</p>
       <Field label="Valor" error={error}><input autoFocus inputMode="decimal" placeholder="0,00" value={value} onChange={(e) => { setValue(e.target.value); setError(''); }} /></Field>
       <div className="form-actions">
-        <button className="btn ghost" onClick={onCancel}>Cancelar</button>
         <button className="btn ghost" onClick={() => apply(-1)}>Retirar</button>
         <button className="btn primary" onClick={() => apply(1)}>Guardar</button>
       </div>
@@ -109,12 +109,11 @@ function GoalForm({ goal, onDone }: { goal?: Goal; onDone: () => void }) {
       <Field label="Nome" error={errors.name}><input value={name} maxLength={60} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Reserva de emergência" /></Field>
       <div className="row-2">
         <Field label="Valor da meta" error={errors.target}><input inputMode="decimal" value={target} onChange={(e) => setTarget(e.target.value)} placeholder="0,00" /></Field>
-        <Field label="Prazo (opcional)"><input type="month" value={deadline} min={currentMonth()} onChange={(e) => setDeadline(e.target.value)} /></Field>
+        <Field label="Prazo (opcional)"><DatePicker mode="month" value={deadline} min={currentMonth()} onChange={setDeadline} placeholder="Sem prazo" clearable /></Field>
       </div>
       <div className="form-actions">
         {goal && <button className="btn danger" onClick={() => { if (confirm('Excluir esta meta?')) { dispatch({ type: 'deleteGoal', id: goal.id }); onDone(); } }}>Excluir</button>}
         <span className="grow" />
-        <button className="btn ghost" onClick={onDone}>Cancelar</button>
         <button className="btn primary" onClick={save}>Salvar</button>
       </div>
     </div>

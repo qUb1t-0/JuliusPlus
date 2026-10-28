@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Select } from '../components/Select';
 import { Empty, Field, Modal, Money } from '../components/ui';
 import { centsToInput, daysInMonth, monthLabel, pad, parseMoney, uid } from '../lib/format';
 import { billState, type BillState } from '../lib/selectors';
@@ -98,16 +99,14 @@ function BillForm({ bill, onDone }: { bill?: Bill; onDone: () => void }) {
       <Field label="Nome" error={errors.title}><input value={title} maxLength={60} onChange={(e) => setTitle(e.target.value)} placeholder="Ex.: Condomínio" /></Field>
       <div className="row-2">
         <Field label="Valor" error={errors.amount}><input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0,00" /></Field>
-        <Field label="Dia do vencimento" hint="Em meses mais curtos vale o último dia.">
-          <select value={dueDay} onChange={(e) => setDueDay(Number(e.target.value))}>
-            {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => <option key={d} value={d}>{d}</option>)}
-          </select>
+        <Field label="Dia do vencimento">
+          <Select value={dueDay} onChange={setDueDay}
+            options={Array.from({ length: 31 }, (_, i) => i + 1).map((d) => ({ value: d, label: `Dia ${d}` }))} />
         </Field>
       </div>
       <div className="form-actions">
         {bill && <button className="btn danger" onClick={() => { if (confirm('Remover esta conta?')) { dispatch({ type: 'deleteBill', id: bill.id }); onDone(); } }}>Remover</button>}
         <span className="grow" />
-        <button className="btn ghost" onClick={onDone}>Cancelar</button>
         <button className="btn primary" onClick={save}>Salvar</button>
       </div>
     </div>

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { Select } from '../components/Select';
+import { downloadExcel } from '../lib/exportExcel';
 import { emptyData } from '../lib/seed';
 import { useStore } from '../lib/store';
 import { signOut } from '../lib/supabase';
@@ -19,6 +21,7 @@ export function Settings() {
   const [msg, setMsg] = useState('');
   const [newCat, setNewCat] = useState({ name: '', emoji: '🏷️', group: '', kind: 'expense' as Kind });
   const [loggingOut, setLoggingOut] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   function addCategory() {
     if (!newCat.name.trim()) return setMsg('Dê um nome para a categoria.');
@@ -40,6 +43,18 @@ export function Settings() {
     // Os dados ficam na nuvem: o aparelho é limpo para a próxima pessoa não ver os lançamentos.
     dispatch({ type: 'replaceAll', data: emptyData() });
     dispatch({ type: 'clearProfile' });
+  }
+
+  async function exportData() {
+    setExporting(true);
+    try {
+      await downloadExcel(data);
+      setMsg('Planilha baixada.');
+    } catch {
+      setMsg('Não foi possível gerar a planilha. Tente de novo.');
+    } finally {
+      setExporting(false);
+    }
   }
 
   const custom = data.categories.filter((c) => c.custom);
@@ -68,9 +83,8 @@ export function Settings() {
           <input aria-label="Emoji" className="emoji-input" maxLength={4} value={newCat.emoji} onChange={(e) => setNewCat({ ...newCat, emoji: e.target.value })} />
           <input aria-label="Nome da categoria" className="grow" placeholder="Nome (ex.: Pets)" value={newCat.name} onChange={(e) => setNewCat({ ...newCat, name: e.target.value })} />
           <input aria-label="Grupo" placeholder="Grupo (opcional)" value={newCat.group} onChange={(e) => setNewCat({ ...newCat, group: e.target.value })} />
-          <select aria-label="Tipo" value={newCat.kind} onChange={(e) => setNewCat({ ...newCat, kind: e.target.value as Kind })}>
-            <option value="expense">Despesa</option><option value="income">Receita</option>
-          </select>
+          <Select<Kind> aria-label="Tipo" value={newCat.kind} onChange={(kind) => setNewCat({ ...newCat, kind })}
+            options={[{ value: 'expense', label: 'Despesa' }, { value: 'income', label: 'Receita' }]} />
           <button className="btn primary" onClick={addCategory}>Adicionar</button>
         </div>
         {custom.length > 0 && (
@@ -87,7 +101,15 @@ export function Settings() {
       </section>
 
       <section className="card">
-        <header className="card-head"><h2>Seus dados</h2></header>
+        <header className="card-head">
+          <h2>Seus dados</h2>
+          <button className="btn primary sm" onClick={exportData} disabled={exporting}>
+            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 4v11M7 10l5 5 5-5M5 19h14" />
+            </svg>
+            {exporting ? 'Gerando planilha…' : 'Baixar Dados'}
+          </button>
+        </header>
         <p className={`sync-status sync-${status}`} role="status">
           <span className="sync-dot" aria-hidden />
           {SYNC_TEXT[status]}

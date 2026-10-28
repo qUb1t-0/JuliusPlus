@@ -16,6 +16,7 @@ export function Money({ cents, signed = false, className = '' }: { cents: Cents;
 }
 
 // Diálogo nativo <dialog>: foco preso, Esc para fechar e fundo inerte sem bibliotecas.
+// Clicar fora não fecha, para não perder o que já foi digitado; só Esc ou o ✕.
 export function Modal({ title, open, onClose, children }: { title: string; open: boolean; onClose: () => void; children: ReactNode }) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -31,7 +32,6 @@ export function Modal({ title, open, onClose, children }: { title: string; open:
       className="modal"
       aria-labelledby={titleId}
       onClose={onClose}
-      onClick={(e) => { if (e.target === ref.current) onClose(); }}
     >
       {open && (
         <div className="modal-body">

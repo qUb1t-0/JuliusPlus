@@ -2,6 +2,8 @@ import { useState, type FormEvent } from 'react';
 import { centsToInput, money, parseMoney, splitCents, todayISO } from '../lib/format';
 import { useStore } from '../lib/store';
 import type { Kind, Method, Transaction } from '../types';
+import { DatePicker } from './DatePicker';
+import { Select } from './Select';
 import { Field } from './ui';
 
 const METHODS: { id: Method; label: string }[] = [
@@ -68,30 +70,21 @@ export function TransactionForm({ editing, defaultKind = 'expense', onDone }: { 
       </Field>
       <div className="row-2">
         <Field label="Categoria" error={errors.category}>
-          <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} aria-invalid={!!errors.category}>
-            <option value="">Selecione…</option>
-            {groups.map((g) => (
-              <optgroup key={g} label={g}>
-                {cats.filter((c) => c.group === g).map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>)}
-              </optgroup>
-            ))}
-          </select>
+          <Select value={categoryId} onChange={setCategoryId} invalid={!!errors.category}
+            options={groups.flatMap((g) => cats.filter((c) => c.group === g).map((c) => ({ value: c.id, label: `${c.emoji} ${c.name}`, group: g })))} />
         </Field>
         <Field label="Data" error={errors.date}>
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          <DatePicker value={date} onChange={setDate} invalid={!!errors.date} />
         </Field>
       </div>
       <div className="row-2">
         <Field label="Forma de pagamento">
-          <select value={method} onChange={(e) => setMethod(e.target.value as Method)}>
-            {METHODS.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
-          </select>
+          <Select value={method} onChange={setMethod} options={METHODS.map((m) => ({ value: m.id, label: m.label }))} />
         </Field>
         {!editing && method === 'credito' && kind === 'expense' && (
           <Field label="Parcelas" hint={installments > 1 && cents ? `${installments}× de ${money(splitCents(cents, installments)[installments - 1])} · um lançamento por mês` : undefined}>
-            <select value={installments} onChange={(e) => setInstallments(Number(e.target.value))}>
-              {Array.from({ length: 24 }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n === 1 ? 'À vista' : `${n}×`}</option>)}
-            </select>
+            <Select value={installments} onChange={setInstallments}
+              options={Array.from({ length: 24 }, (_, i) => i + 1).map((n) => ({ value: n, label: n === 1 ? 'À vista' : `${n}×` }))} />
           </Field>
         )}
       </div>
@@ -103,7 +96,6 @@ export function TransactionForm({ editing, defaultKind = 'expense', onDone }: { 
         <textarea rows={2} maxLength={280} value={note} onChange={(e) => setNote(e.target.value)} />
       </Field>
       <div className="form-actions">
-        <button type="button" className="btn ghost" onClick={onDone}>Cancelar</button>
         <button type="submit" className="btn primary">{editing ? 'Salvar alterações' : 'Adicionar'}</button>
       </div>
     </form>
