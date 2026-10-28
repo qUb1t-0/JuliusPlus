@@ -14,6 +14,8 @@ export type StepResult = { ok: true } | { ok: false; message: string };
 
 function describe(error: AuthError): string {
   const code = error.code ?? '';
+  // Limite de e-mails por hora do projeto (servidor de e-mail padrão do Supabase): vale para todos os usuários.
+  if (code === 'over_email_send_rate_limit') return 'Atingimos o limite de e-mails por hora. Tente novamente em alguns minutos — até 1 hora.';
   if (error.status === 429 || code.includes('rate_limit')) return 'Muitas tentativas. Aguarde um minuto e tente de novo.';
   if (code === 'invalid_credentials') return 'E-mail ou senha incorretos.';
   if (code === 'email_not_confirmed') return 'Este e-mail ainda não foi confirmado. Faça o cadastro para receber o link.';
@@ -82,6 +84,27 @@ export async function signInWithPassword(email: string, password: string): Promi
   if (!supabase) return { ok: false, message: 'Login indisponível neste ambiente.' };
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   return error ? { ok: false, message: describe(error) } : { ok: true };
+}
+
+// Dados do app guardados na conta (tabela dados_usuario). `null` = conta ainda sem dados;
+// `undefined` = não foi possível consultar (sem sessão ou sem conexão).
+export async function fetchUserData(): Promise<unknown | null | undefined> {
+  if (!supabase) return undefined;
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return undefined;
+  const { data, error } = await supabase.from('dados_usuario').select('dados').eq('user_id', session.user.id).maybeSingle();
+  if (error) return undefined;
+  return data ? data.dados : null;
+}
+
+export async function saveUserData(dados: unknown): Promise<boolean> {
+  if (!supabase) return false;
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return false;
+  const { error } = await supabase
+    .from('dados_usuario')
+    .upsert({ user_id: session.user.id, dados, atualizado_em: new Date().toISOString() });
+  return !error;
 }
 
 // Encerra a sessão neste navegador.

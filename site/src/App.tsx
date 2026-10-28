@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { TransactionForm } from './components/TransactionForm';
 import { Modal } from './components/ui';
 import { addMonths, currentMonth, monthLabel } from './lib/format';
-import { StoreProvider, useStore } from './lib/store';
-import { isPasswordRecoveryLink, linkErrorFromUrl, loadSessionState, supabase, type SessionState } from './lib/supabase';
+import { CloudSync } from './lib/cloudSync';
+import { isAppData, StoreProvider, useStore } from './lib/store';
+import { fetchUserData, isPasswordRecoveryLink, linkErrorFromUrl, loadSessionState, supabase, type SessionState } from './lib/supabase';
 import { LoadingScreen } from './components/LoadingScreen';
+import { ThemeToggle } from './components/ThemeToggle';
 import { Bills } from './pages/Bills';
 import { Budget } from './pages/Budget';
 import { Goals } from './pages/Goals';
@@ -93,7 +95,7 @@ function Shell() {
           </ul>
         </nav>
         <button className="btn primary block" onClick={() => setAdding(true)}>+ Nova transação <kbd>N</kbd></button>
-        <p className="sidebar-foot">Olá, {data.profile?.name.split(' ')[0]}!<br />Seus lançamentos ficam neste navegador.</p>
+        <ThemeToggle />
       </aside>
 
       <div className="content">
@@ -154,7 +156,8 @@ function Shell() {
   );
 }
 
-type Boot = { status: 'loading' } | { status: 'app' } | { status: 'signup'; start: SignupStart };
+// `preloaded`: os dados da conta já foram trazidos da nuvem durante a tela de carregamento.
+type Boot = { status: 'loading' } | { status: 'app'; preloaded: boolean } | { status: 'signup'; start: SignupStart };
 
 // Ao abrir o site, mostra a tela de carregamento enquanto confere a sessão no Supabase.
 // O perfil guardado no navegador não basta para entrar: é preciso sessão confirmada e com senha.
@@ -171,20 +174,25 @@ function Gate() {
     const linkError = linkErrorFromUrl() ?? undefined;
     loadSessionState()
       .catch((): SessionState => ({ status: 'none' }))
-      .then((s) => {
+      .then(async (s) => {
         if (!alive) return;
         // Remove da URL os tokens ou erros devolvidos pelo link de confirmação do e-mail.
         if (/access_token|error/.test(window.location.hash + window.location.search)) {
           window.history.replaceState(null, '', window.location.pathname);
         }
-        if (!supabase) return setBoot(hasLocalProfile ? { status: 'app' } : { status: 'signup', start: { kind: 'details' } });
+        if (!supabase) return setBoot(hasLocalProfile ? { status: 'app', preloaded: false } : { status: 'signup', start: { kind: 'details' } });
         // Link de "Esqueci senha": abre direto na tela de nova senha.
         if (s.status !== 'none' && isPasswordRecoveryLink()) {
           return setBoot({ status: 'signup', start: { kind: 'password', input: s.input, reset: true } });
         }
         if (s.status === 'ready') {
+          // Traz os dados da conta enquanto a tela de carregamento ainda está visível.
+          const remote = await fetchUserData();
+          if (!alive) return;
+          const preloaded = isAppData(remote);
+          if (preloaded) dispatch({ type: 'replaceAll', data: remote });
           dispatch({ type: 'setProfile', profile: { ...s.input, createdAt: new Date().toISOString(), synced: true } });
-          return setBoot({ status: 'app' });
+          return setBoot({ status: 'app', preloaded });
         }
         // Primeiro acesso abre na tela de entrar; link vencido vai para o cadastro, que explica como pedir outro.
         setBoot({
@@ -200,8 +208,8 @@ function Gate() {
   // Sem perfil depois de estar no app = saiu da conta: volta para a tela de entrar.
   const start: SignupStart = boot.status === 'signup' ? boot.start : supabase ? { kind: 'login' } : { kind: 'details' };
   const content = boot.status === 'loading' ? null
-    : boot.status === 'app' && data.profile ? <Shell />
-    : <Signup key={start.kind} start={start} intro={loaderVisible} onFinished={() => setBoot({ status: 'app' })} />;
+    : boot.status === 'app' && data.profile ? <CloudSync preloaded={boot.preloaded}><Shell /></CloudSync>
+    : <Signup key={start.kind} start={start} intro={loaderVisible} onFinished={() => setBoot({ status: 'app', preloaded: false })} />;
 
   return (
     <>

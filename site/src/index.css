@@ -92,7 +92,6 @@ kbd { font-size: 0.7rem; border: 1px solid currentColor; border-radius: 4px; pad
 .sidebar .btn.primary { background: var(--coin); color: var(--navy-deep); }
 .sidebar .btn.primary:hover { filter: brightness(1.05); }
 .sidebar :focus-visible { outline-color: var(--coin); }
-.sidebar-foot { margin-top: auto; font-size: 0.75rem; color: #c9d3ee; padding: 0 8px; opacity: 0.8; }
 .content { min-width: 0; }
 .topbar { position: sticky; top: 0; z-index: 5; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 16px 32px; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px); }
 .topbar-actions { display: flex; gap: 8px; align-items: center; }
@@ -311,6 +310,12 @@ input[aria-invalid='true'], select[aria-invalid='true'] { border-color: var(--ex
   .jp-pop, .jp-wobble, .jp-brow, .jp-coin, .jp-plus, .jp-glow, .jp-tip { animation: none !important; }
 }
 
+/* Alternância claro/escuro na barra lateral (sempre azul-marinho, nos dois temas) */
+.theme-toggle { margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 999px; background: rgb(0 0 0 / 22%); }
+.theme-toggle button { display: flex; align-items: center; justify-content: center; gap: 6px; border: 0; border-radius: 999px; padding: 8px 10px; background: none; color: #c9d3ee; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+.theme-toggle button:hover { color: #fff; }
+.theme-toggle button[aria-pressed='true'] { background: var(--coin); color: var(--navy-deep); }
+
 /* Campo de senha com olho */
 .password-input { position: relative; }
 .password-input input { padding-right: 46px; }
@@ -318,6 +323,14 @@ input[aria-invalid='true'], select[aria-invalid='true'] { border-color: var(--ex
 .password-toggle:hover, .password-toggle[aria-pressed='true'] { color: var(--brand); }
 .field-label-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .field-label-row .link { font-size: 0.82rem; padding: 0; }
+
+/* Ajustes › Seus dados: estado da sincronização com a conta */
+.sync-status { display: flex; align-items: flex-start; gap: 8px; font-size: 0.85rem; color: var(--muted); }
+.sync-dot { width: 9px; height: 9px; border-radius: 50%; margin-top: 5px; flex: none; background: var(--muted); }
+.sync-saved .sync-dot { background: var(--income); }
+.sync-saving .sync-dot, .sync-loading .sync-dot { background: var(--coin); animation: jp-glow 1.2s ease-in-out infinite; }
+.sync-error .sync-dot { background: var(--expense); }
+.sync-error { color: var(--expense); }
 
 /* Ajustes › Conta */
 .account-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
