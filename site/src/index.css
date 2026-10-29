@@ -69,12 +69,13 @@
 ::-webkit-scrollbar-thumb:hover { background-color: var(--scroll-thumb-hover); }
 ::-webkit-scrollbar-thumb:active { background-color: var(--brand-hover); }
 ::-webkit-scrollbar-button { display: none; }
-.sidebar { --scroll-thumb: rgb(255 255 255 / 18%); --scroll-thumb-hover: var(--coin); }
-.tabs::-webkit-scrollbar { height: 6px; }
-.tabs::-webkit-scrollbar-thumb { border-width: 1px; }
+/* Só a página principal mostra barra. Menu, janelas, listas e abas continuam rolando
+   (roda, touchpad, toque, teclado), mas sem barra visível. */
+:not(html) { scrollbar-width: none; }
+:not(html)::-webkit-scrollbar { display: none; }
 /* Firefox (sem ::-webkit-scrollbar): propriedades padrão. */
 @supports not selector(::-webkit-scrollbar) {
-  * { scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+  html { scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
 }
 body { margin: 0; background: var(--bg); }
 h1, h2, h3 { margin: 0; line-height: 1.2; }
@@ -344,11 +345,37 @@ input[aria-invalid='true'], select[aria-invalid='true'] { border-color: var(--ex
 .segmented button.on { background: var(--surface); box-shadow: var(--shadow); }
 .segmented button.on.expense { color: var(--expense); }
 .segmented button.on.income { color: var(--income); }
-.emoji-picker { display: flex; flex-wrap: wrap; gap: 6px; }
-.emoji-picker button { width: 42px; height: 42px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; font-size: 1.2rem; }
-.emoji-picker button.on { border-color: var(--brand); background: var(--brand-soft); box-shadow: 0 0 0 2px var(--brand); }
 .limits-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; max-height: 46vh; overflow-y: auto; padding-right: 4px; }
 .limit-item { display: grid; gap: 4px; font-size: 0.88rem; }
+/* Nome e ícone editáveis no orçamento: parecem texto até passar o mouse ou focar. */
+.limit-name { display: flex; align-items: center; gap: 4px; }
+.limit-name-input { flex: 1; min-width: 0; min-height: 32px; padding: 4px 8px; border-color: transparent; background: transparent; font-weight: 600; font-size: 0.88rem; }
+.limit-name-input:hover { border-color: var(--border); }
+.limit-name-input:focus { border-color: var(--brand); background: var(--surface); }
+.limit-item.is-new .limit-name-input { color: var(--brand); }
+.limit-new { border: 1.5px dashed var(--border); border-radius: 12px; padding: 10px; }
+.limit-new .limit-name-input { border-color: var(--border); background: var(--surface); }
+.limit-new-row { display: flex; gap: 8px; }
+.limit-new-row input { flex: 1; min-width: 0; }
+
+.emoji-trigger { flex: none; width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid transparent; border-radius: 9px; background: none; font-size: 1.15rem; line-height: 1; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+.emoji-trigger:hover, .emoji-trigger[aria-expanded='true'] { background: var(--surface-2); border-color: var(--border); }
+.limit-new .emoji-trigger { border-color: var(--border); background: var(--surface); }
+/* Ícone + nome nos formulários de conta, meta e projeto. */
+.name-with-icon { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; }
+.name-with-icon .emoji-trigger { width: 42px; height: 42px; font-size: 1.35rem; border-color: var(--border); background: var(--surface); }
+.name-with-icon .emoji-trigger:hover, .name-with-icon .emoji-trigger[aria-expanded='true'] { border-color: var(--brand); }
+.emoji-pop { width: 324px; padding: 8px; }
+.emoji-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); }
+.emoji-tabs button { flex: 1; min-width: 0; padding: 0; height: 34px; border: 0; border-bottom: 2px solid transparent; border-radius: 8px 8px 0 0; background: none; font-size: 1.05rem; cursor: pointer; opacity: 0.5; filter: grayscale(0.6); transition: opacity 0.15s, filter 0.15s; }
+.emoji-tabs button:hover { opacity: 1; filter: none; background: var(--surface-2); }
+.emoji-tabs button.on { opacity: 1; filter: none; border-bottom-color: var(--brand); }
+.emoji-group-title { padding: 8px 4px 4px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.emoji-grid { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 2px; max-height: 232px; overflow-x: hidden; overflow-y: auto; }
+.emoji-grid button { aspect-ratio: 1; min-width: 0; padding: 0; border: 0; border-radius: 8px; background: none; font-size: 1.35rem; line-height: 1; cursor: pointer; transition: transform 0.1s; }
+.emoji-grid button:hover { background: var(--surface-2); transform: scale(1.15); }
+.emoji-grid button[aria-pressed='true'] { background: var(--brand-soft); box-shadow: inset 0 0 0 2px var(--brand); }
+@media (prefers-reduced-motion: reduce) { .emoji-grid button { transition: none; } .emoji-grid button:hover { transform: none; } }
 
 .modal { border: 0; border-radius: 20px; padding: 0; width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 48px); background: var(--surface); color: var(--text); box-shadow: 0 20px 60px rgb(0 0 0 / 30%); }
 .modal::backdrop { background: rgb(10 20 14 / 45%); backdrop-filter: blur(2px); }

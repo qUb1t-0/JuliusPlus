@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { EmojiPicker } from '../components/EmojiPicker';
 import { Select } from '../components/Select';
 import { Empty, Field, Modal, Money } from '../components/ui';
 import { centsToInput, daysInMonth, monthLabel, pad, parseMoney, uid } from '../lib/format';
@@ -70,7 +71,6 @@ export function Bills({ month }: { month: string }) {
   );
 }
 
-const EMOJIS = ['🏠', '💡', '💧', '🔥', '📶', '📱', '🏢', '💳', '🚗', '🎓', '🩺', '📄'];
 
 function BillForm({ bill, onDone }: { bill?: Bill; onDone: () => void }) {
   const { dispatch } = useStore();
@@ -93,10 +93,10 @@ function BillForm({ bill, onDone }: { bill?: Bill; onDone: () => void }) {
 
   return (
     <div className="form">
-      <div className="emoji-picker" role="radiogroup" aria-label="Ícone">
-        {EMOJIS.map((e) => <button key={e} type="button" role="radio" aria-checked={emoji === e} className={emoji === e ? 'on' : ''} onClick={() => setEmoji(e)}>{e}</button>)}
+      <div className="name-with-icon">
+        <div className="field"><span className="field-label">Ícone</span><EmojiPicker value={emoji} onChange={setEmoji} label="Ícone da conta" /></div>
+        <Field label="Nome" error={errors.title}><input value={title} maxLength={60} onChange={(e) => setTitle(e.target.value)} placeholder="Ex.: Condomínio" /></Field>
       </div>
-      <Field label="Nome" error={errors.title}><input value={title} maxLength={60} onChange={(e) => setTitle(e.target.value)} placeholder="Ex.: Condomínio" /></Field>
       <div className="row-2">
         <Field label="Valor" error={errors.amount}><input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0,00" /></Field>
         <Field label="Dia do vencimento">

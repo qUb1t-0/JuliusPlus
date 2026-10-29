@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { DatePicker } from '../components/DatePicker';
+import { EmojiPicker } from '../components/EmojiPicker';
 import { Empty, Field, Modal, Money, Progress } from '../components/ui';
 import { centsToInput, currentMonth, money, monthLabel, parseMoney, pct, uid } from '../lib/format';
 import { useStore } from '../lib/store';
@@ -80,7 +81,6 @@ function DepositForm({ goal, onDone }: { goal: Goal; onDone: (saved: number) => 
   );
 }
 
-const EMOJIS = ['🛟', '✈️', '🏠', '🚗', '🎓', '💍', '💻', '🏖️', '👶', '🐶', '📈', '🎁'];
 
 function GoalForm({ goal, onDone }: { goal?: Goal; onDone: () => void }) {
   const { dispatch } = useStore();
@@ -103,10 +103,10 @@ function GoalForm({ goal, onDone }: { goal?: Goal; onDone: () => void }) {
 
   return (
     <div className="form">
-      <div className="emoji-picker" role="radiogroup" aria-label="Ícone">
-        {EMOJIS.map((e) => <button key={e} type="button" role="radio" aria-checked={emoji === e} className={emoji === e ? 'on' : ''} onClick={() => setEmoji(e)}>{e}</button>)}
+      <div className="name-with-icon">
+        <div className="field"><span className="field-label">Ícone</span><EmojiPicker value={emoji} onChange={setEmoji} label="Ícone da meta" /></div>
+        <Field label="Nome" error={errors.name}><input value={name} maxLength={60} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Reserva de emergência" /></Field>
       </div>
-      <Field label="Nome" error={errors.name}><input value={name} maxLength={60} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Reserva de emergência" /></Field>
       <div className="row-2">
         <Field label="Valor da meta" error={errors.target}><input inputMode="decimal" value={target} onChange={(e) => setTarget(e.target.value)} placeholder="0,00" /></Field>
         <Field label="Prazo (opcional)"><DatePicker mode="month" value={deadline} min={currentMonth()} onChange={setDeadline} placeholder="Sem prazo" clearable /></Field>

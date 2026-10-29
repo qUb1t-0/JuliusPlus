@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { DatePicker } from '../components/DatePicker';
+import { EmojiPicker } from '../components/EmojiPicker';
 import { Select } from '../components/Select';
 import { Empty, Field, Modal, Money } from '../components/ui';
 import { centsToInput, parseMoney, todayISO, uid } from '../lib/format';
@@ -115,7 +116,6 @@ export function Projects() {
   );
 }
 
-const EMOJIS = ['🚀', '💡', '🏪', '🍔', '☕', '💻', '📱', '🛒', '🎨', '📦', '🏋️', '🌱'];
 
 // Categoria criada na primeira vez que um projeto é efetivado.
 const PROJECT_CATEGORY = { id: 'projetos', name: 'Projetos', emoji: '🚀', group: 'Investimentos', kind: 'expense' as const, custom: true };
@@ -182,12 +182,12 @@ function ProjectForm({ project, onDone }: { project?: FutureProject; onDone: () 
 
   return (
     <div className="form">
-      <div className="emoji-picker" role="radiogroup" aria-label="Ícone">
-        {EMOJIS.map((e) => <button key={e} type="button" role="radio" aria-checked={emoji === e} className={emoji === e ? 'on' : ''} onClick={() => setEmoji(e)}>{e}</button>)}
+      <div className="name-with-icon">
+        <div className="field"><span className="field-label">Ícone</span><EmojiPicker value={emoji} onChange={setEmoji} label="Ícone do projeto" /></div>
+        <Field label="Nome do projeto" error={errors.name}>
+          <input autoFocus value={name} maxLength={80} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Cafeteria no centro" aria-invalid={!!errors.name} />
+        </Field>
       </div>
-      <Field label="Nome do projeto" error={errors.name}>
-        <input autoFocus value={name} maxLength={80} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Cafeteria no centro" aria-invalid={!!errors.name} />
-      </Field>
       <Field label="Descrição (opcional)">
         <textarea rows={4} maxLength={1000} value={description} onChange={(e) => setDescription(e.target.value)}
           placeholder="Como funcionaria, público, diferenciais, próximos passos…" />
