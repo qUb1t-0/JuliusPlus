@@ -234,6 +234,22 @@ main { padding: 8px 32px 48px; max-width: 1180px; outline: none; }
 .goal-emoji { font-size: 1.6rem; width: 46px; height: 46px; display: grid; place-items: center; background: var(--surface-2); border-radius: 14px; }
 .goal-actions { display: flex; gap: 8px; }
 
+/* Projetos Futuros */
+.project-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.project-filter { margin-bottom: 16px; }
+.project { display: flex; flex-direction: column; }
+.project-status { align-self: flex-start; }
+.project-desc { font-size: 0.9rem; white-space: pre-wrap; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.project-done { border-color: var(--brand); }
+.project-dropped { opacity: 0.65; }
+.project-dropped h3 { text-decoration: line-through; text-decoration-color: var(--muted); }
+.project-actions { margin-top: auto; padding-top: 4px; }
+.project-done-date a { color: var(--brand); font-weight: 650; }
+.project-done-note { display: grid; gap: 8px; margin: 0; background: var(--brand-soft); border: 1px solid var(--brand); }
+.project h3 { overflow-wrap: anywhere; }
+textarea { resize: vertical; min-height: 96px; line-height: 1.45; }
+@media (max-width: 720px) { .project-stats { grid-template-columns: repeat(2, 1fr); } }
+
 .tabs { display: inline-flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 4px; width: fit-content; max-width: 100%; overflow-x: auto; }
 .tabs button { border: 0; background: none; padding: 8px 16px; border-radius: 999px; cursor: pointer; font-weight: 600; color: var(--muted); white-space: nowrap; }
 .tabs button.on { background: var(--brand); color: var(--brand-ink); }

@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useReducer, type ReactNode } from 'react';
-import type { AppData, Bill, Budget, Category, Goal, Profile, Settings, Transaction } from '../types';
+import type { AppData, Bill, Budget, Category, FutureProject, Goal, Profile, Settings, Transaction } from '../types';
 import { addMonthsToDate, splitCents, uid } from './format';
 import { demoData } from './seed';
 
@@ -24,6 +24,8 @@ type Action =
   | { type: 'deleteBill'; id: string }
   | { type: 'upsertGoal'; goal: Goal }
   | { type: 'deleteGoal'; id: string }
+  | { type: 'upsertProject'; project: FutureProject }
+  | { type: 'deleteProject'; id: string }
   | { type: 'upsertCategory'; category: Category }
   | { type: 'deleteCategory'; id: string }
   | { type: 'setSettings'; settings: Partial<Settings> }
@@ -82,6 +84,10 @@ function reducer(state: AppData, a: Action): AppData {
       return { ...state, goals: upsert(state.goals, a.goal) };
     case 'deleteGoal':
       return { ...state, goals: state.goals.filter((g) => g.id !== a.id) };
+    case 'upsertProject':
+      return { ...state, projects: upsert(state.projects ?? [], a.project) };
+    case 'deleteProject':
+      return { ...state, projects: (state.projects ?? []).filter((p) => p.id !== a.id) };
     case 'upsertCategory':
       return { ...state, categories: upsert(state.categories, a.category) };
     case 'deleteCategory': {

@@ -24,6 +24,7 @@ export interface Transaction {
   recurring: boolean;
   note?: string;
   installment?: { number: number; total: number; groupId: string };
+  projectId?: string; // despesa gerada ao efetivar um Projeto Futuro
   deletedAt?: string;
 }
 
@@ -50,6 +51,21 @@ export interface Goal {
   deadline?: string; // YYYY-MM
 }
 
+export type ProjectStatus = 'idea' | 'analysis' | 'done' | 'dropped';
+
+// Ideia de negócio registrada em "Projetos Futuros".
+export interface FutureProject {
+  id: string;
+  name: string;
+  emoji: string;
+  description: string;
+  investment?: Cents; // investimento estimado
+  status: ProjectStatus;
+  createdAt: string; // YYYY-MM-DD
+  doneAt?: string; // YYYY-MM-DD, quando foi efetivado
+  transactionId?: string; // despesa lançada em Transações ao efetivar
+}
+
 export interface Settings {
   hideValues: boolean;
   theme: 'system' | 'light' | 'dark';
@@ -72,5 +88,6 @@ export interface AppData {
   budget: Budget;
   bills: Bill[];
   goals: Goal[];
+  projects?: FutureProject[]; // opcional: dados salvos antes da aba existir não têm o campo
   settings: Settings;
 }

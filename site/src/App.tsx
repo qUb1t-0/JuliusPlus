@@ -12,11 +12,12 @@ import { Budget } from './pages/Budget';
 import { Goals } from './pages/Goals';
 import { Home } from './pages/Home';
 import { Insights } from './pages/Insights';
+import { Projects } from './pages/Projects';
 import { Settings } from './pages/Settings';
 import { Signup, type SignupStart } from './pages/Signup';
 import { Transactions } from './pages/Transactions';
 
-export type Page = 'home' | 'transactions' | 'budget' | 'bills' | 'goals' | 'insights' | 'settings';
+export type Page = 'home' | 'transactions' | 'budget' | 'bills' | 'goals' | 'projects' | 'insights' | 'settings';
 
 const NAV: { id: Page; label: string; icon: string; mobile?: boolean }[] = [
   { id: 'home', label: 'Início', icon: '🏡', mobile: true },
@@ -24,10 +25,11 @@ const NAV: { id: Page; label: string; icon: string; mobile?: boolean }[] = [
   { id: 'bills', label: 'Contas a pagar', icon: '📅' },
   { id: 'transactions', label: 'Transações', icon: '🧾', mobile: true },
   { id: 'goals', label: 'Metas', icon: '🏁', mobile: true },
+  { id: 'projects', label: 'Projetos Futuros', icon: '🚀' },
   { id: 'insights', label: 'Insights', icon: '📊' },
   { id: 'settings', label: 'Ajustes', icon: '⚙️' },
 ];
-const MONTHLESS: Page[] = ['goals', 'settings'];
+const MONTHLESS: Page[] = ['goals', 'projects', 'settings'];
 
 function pageFromHash(): Page {
   const h = window.location.hash.slice(1) as Page;
@@ -126,6 +128,7 @@ function Shell() {
           {page === 'budget' && <Budget month={month} />}
           {page === 'bills' && <Bills month={month} />}
           {page === 'goals' && <Goals />}
+          {page === 'projects' && <Projects />}
           {page === 'insights' && <Insights month={month} />}
           {page === 'settings' && <Settings />}
         </main>

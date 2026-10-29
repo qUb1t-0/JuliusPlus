@@ -23,7 +23,11 @@ export function Modal({ title, open, onClose, children }: { title: string; open:
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    if (open && !el.open) el.showModal();
+    if (open && !el.open) {
+      el.showModal();
+      // showModal foca o primeiro botão (ícones); em formulários, o foco vai para o primeiro campo de texto.
+      el.querySelector<HTMLElement>('input:not([type="checkbox"]), textarea')?.focus();
+    }
     if (!open && el.open) el.close();
   }, [open]);
   return (

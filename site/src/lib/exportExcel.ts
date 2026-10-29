@@ -175,6 +175,19 @@ export async function downloadExcel(data: AppData) {
     progress: g.target > 0 ? Math.min(1, g.saved / g.target) : 0, deadline: g.deadline ? monthLabel(g.deadline) : 'Sem prazo',
   })));
 
+  const PROJECT_STATUS = { idea: 'Ideia', analysis: 'Em análise', done: 'Efetivado', dropped: 'Descartado' };
+  table(wb.addWorksheet('Projetos Futuros'), [
+    { header: 'Projeto', key: 'name', width: 28 },
+    { header: 'Situação', key: 'status', width: 14 },
+    { header: 'Investimento estimado', key: 'investment', width: 22, fmt: BRL },
+    { header: 'Criado em', key: 'created', width: 12, fmt: DATE },
+    { header: 'Efetivado em', key: 'done', width: 14, fmt: DATE },
+    { header: 'Descrição', key: 'description', width: 60 },
+  ], [...(data.projects ?? [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map((p) => ({
+    name: p.name, status: PROJECT_STATUS[p.status], investment: p.investment != null ? reais(p.investment) : '',
+    created: toDate(p.createdAt), done: p.doneAt ? toDate(p.doneAt) : '', description: p.description,
+  })));
+
   table(wb.addWorksheet('Categorias'), [
     { header: 'Categoria', key: 'name', width: 24 },
     { header: 'Grupo', key: 'group', width: 18 },
