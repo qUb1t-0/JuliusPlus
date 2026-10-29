@@ -32,6 +32,7 @@ export interface Transaction {
 export interface Budget {
   total: Cents;
   limits: Record<string, Cents>;
+  order?: string[]; // ordem escolhida pelo usuário na lista "Por categoria" (ids de categoria)
 }
 
 export interface Bill {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
 import { useConfirm } from '../components/Confirm';
 import { EmojiPicker } from '../components/EmojiPicker';
 import { Empty, Field, Modal, Money, Progress } from '../components/ui';
@@ -18,8 +18,148 @@ export function Budget({ month }: { month: string }) {
   const allocated = Object.values(limits).reduce((a, b) => a + b, 0);
   const p = pace(s.expense, total, month);
   const expenseCats = data.categories.filter((c) => c.kind === 'expense');
-  const limited = expenseCats.filter((c) => limits[c.id]).sort((a, b) => pct(spentByCat.get(b.id) ?? 0, limits[b.id]) - pct(spentByCat.get(a.id) ?? 0, limits[a.id]));
+  // Ordem escolhida pelo usuário (arrastando); o que não está nela vem depois, do mais usado ao menos usado.
+  const order = data.budget.order ?? [];
+  const rank = (id: string) => { const i = order.indexOf(id); return i < 0 ? Infinity : i; };
+  const limited = expenseCats.filter((c) => limits[c.id]).sort((a, b) =>
+    (rank(a.id) - rank(b.id)) || (pct(spentByCat.get(b.id) ?? 0, limits[b.id]) - pct(spentByCat.get(a.id) ?? 0, limits[a.id])));
   const unlimited = expenseCats.filter((c) => !limits[c.id] && spentByCat.get(c.id));
+
+  // Arrastar pelo ícone ⠿: a lista se reorganiza ao vivo e a ordem é salva ao soltar.
+  const listRef = useRef<HTMLUListElement>(null);
+  const [drag, setDrag] = useState<{ id: string; ids: string[] } | null>(null);
+  const byId = new Map(limited.map((c) => [c.id, c]));
+  const shown = drag ? drag.ids.map((id) => byId.get(id)!).filter(Boolean) : limited;
+
+  function saveOrder(ids: string[]) {
+    const rest = order.filter((id) => !ids.includes(id));
+    dispatch({ type: 'setBudget', budget: { ...data.budget, order: [...ids, ...rest] } });
+  }
+
+  // Efeito de arrastar: o item segura no ponto clicado e segue o mouse; os outros deslizam
+  // até o lugar novo (técnica FLIP) e, ao soltar, o item "assenta" na posição.
+  const grab = useRef({ offset: 0, y: 0 });
+  const flipFrom = useRef<Map<string, number> | null>(null);
+  const items = () => (listRef.current ? [...listRef.current.children] as HTMLElement[] : []);
+  const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const EASE = 'cubic-bezier(0.2, 0.8, 0.2, 1)';
+
+  function captureRects() {
+    flipFrom.current = new Map(items().map((el) => [el.dataset.id!, el.getBoundingClientRect().top]));
+  }
+
+  function placeDragged(id: string) {
+    const el = items().find((x) => x.dataset.id === id);
+    if (!el) return;
+    el.style.transform = '';
+    const natural = el.getBoundingClientRect().top;
+    el.style.transform = `translateY(${grab.current.y - grab.current.offset - natural}px) scale(1.02)`;
+  }
+
+  const orderKey = shown.map((c) => c.id).join();
+  useLayoutEffect(() => {
+    const from = flipFrom.current;
+    flipFrom.current = null;
+    if (drag) placeDragged(drag.id);
+    if (!from || reduceMotion()) return;
+    for (const el of items()) {
+      if (el.dataset.id === drag?.id) continue;
+      const prev = from.get(el.dataset.id!);
+      if (prev === undefined) continue;
+      el.getAnimations().forEach((a) => a.cancel());
+      const dy = prev - el.getBoundingClientRect().top;
+      if (Math.abs(dy) > 1) el.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 220, easing: EASE });
+    }
+    // Só a mudança de ordem dispara a animação; drag é lido no momento.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderKey]);
+
+  function startDrag(e: PointerEvent<HTMLButtonElement>, id: string) {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.currentTarget.focus();
+    const li = e.currentTarget.closest('li');
+    grab.current = { offset: e.clientY - (li?.getBoundingClientRect().top ?? e.clientY), y: e.clientY };
+    setDrag({ id, ids: limited.map((c) => c.id) });
+  }
+
+  // Movimento e soltura ouvidos na janela: reordenar move o <li> no DOM, o que cancelaria
+  // um setPointerCapture na alça e faria o "soltar" se perder.
+  const dragHandlers = useRef({ move: moveDrag, end: endDrag });
+  dragHandlers.current = { move: moveDrag, end: endDrag };
+  const dragging = drag?.id;
+  useEffect(() => {
+    if (!dragging) return;
+    const move = (e: globalThis.PointerEvent) => dragHandlers.current.move(e);
+    const end = () => dragHandlers.current.end();
+    addEventListener('pointermove', move);
+    addEventListener('pointerup', end);
+    addEventListener('pointercancel', end);
+    return () => {
+      removeEventListener('pointermove', move);
+      removeEventListener('pointerup', end);
+      removeEventListener('pointercancel', end);
+    };
+  }, [dragging]);
+
+  function moveDrag(e: { clientY: number }) {
+    if (!drag) return;
+    grab.current.y = e.clientY;
+    // Troca assim que a borda do item arrastado passa do meio do vizinho:
+    // descendo, a borda de baixo; subindo, a de cima.
+    const height = items().find((el) => el.dataset.id === drag.id)?.offsetHeight ?? 0;
+    const top = e.clientY - grab.current.offset;
+    const bottom = top + height;
+    const pos = drag.ids.indexOf(drag.id);
+    const others = items().filter((el) => el.dataset.id !== drag.id);
+    let index = 0;
+    others.forEach((el, i) => {
+      const r = el.getBoundingClientRect();
+      const mid = r.top + r.height / 2;
+      if (i < pos ? top >= mid : bottom > mid) index = i + 1;
+    });
+    const ids = drag.ids.filter((id) => id !== drag.id);
+    ids.splice(index, 0, drag.id);
+    if (ids.join() !== drag.ids.join()) {
+      captureRects();
+      setDrag({ ...drag, ids });
+    } else {
+      placeDragged(drag.id);
+    }
+  }
+
+  function endDrag() {
+    if (!drag) return;
+    const el = items().find((x) => x.dataset.id === drag.id);
+    if (el) {
+      const visual = el.getBoundingClientRect().top;
+      el.style.transform = '';
+      const dy = visual - el.getBoundingClientRect().top;
+      if (!reduceMotion() && Math.abs(dy) > 1) {
+        el.classList.add('dropping');
+        el.animate([{ transform: `translateY(${dy}px) scale(1.02)` }, { transform: 'none' }], { duration: 200, easing: EASE })
+          .finished.then(() => el.classList.remove('dropping'), () => el.classList.remove('dropping'));
+      }
+    }
+    if (drag.ids.join() !== limited.map((c) => c.id).join()) saveOrder(drag.ids);
+    setDrag(null);
+  }
+
+  // Teclado: setas para cima/baixo movem a categoria focada.
+  function keyMove(e: KeyboardEvent<HTMLButtonElement>, id: string) {
+    const delta = e.key === 'ArrowUp' ? -1 : e.key === 'ArrowDown' ? 1 : 0;
+    if (!delta) return;
+    e.preventDefault();
+    const ids = limited.map((c) => c.id);
+    const from = ids.indexOf(id);
+    const to = from + delta;
+    if (to < 0 || to >= ids.length) return;
+    ids.splice(to, 0, ids.splice(from, 1)[0]);
+    captureRects();
+    saveOrder(ids);
+    const target = e.currentTarget;
+    requestAnimationFrame(() => target.focus());
+  }
 
   return (
     <div className="page">
@@ -48,14 +188,25 @@ export function Budget({ month }: { month: string }) {
           <section className="card">
             <header className="card-head"><h2>Por categoria</h2></header>
             {limited.length === 0 ? <Empty icon="🗂️" title="Nenhuma categoria com limite" /> : (
-              <ul className="budget-list">
-                {limited.map((c) => {
+              <ul ref={listRef} className={`budget-list${drag ? ' sorting' : ''}`}>
+                {shown.map((c) => {
                   const spent = spentByCat.get(c.id) ?? 0;
                   const st = statusFor(spent, limits[c.id]);
                   return (
-                    <li key={c.id}>
+                    <li key={c.id} data-id={c.id} className={drag?.id === c.id ? 'dragging' : undefined}>
                       <div className="budget-row">
-                        <span><span aria-hidden>{c.emoji}</span> {c.name}</span>
+                        <span className="budget-name">
+                          <button type="button" className="drag-handle" aria-label={`Reordenar ${c.name} (arraste ou use as setas)`} title="Arraste para reorganizar"
+                            onPointerDown={(e) => startDrag(e, c.id)}
+                            onKeyDown={(e) => keyMove(e, c.id)}>
+                            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" fill="currentColor">
+                              <circle cx="4.5" cy="3" r="1.3" /><circle cx="9.5" cy="3" r="1.3" />
+                              <circle cx="4.5" cy="7" r="1.3" /><circle cx="9.5" cy="7" r="1.3" />
+                              <circle cx="4.5" cy="11" r="1.3" /><circle cx="9.5" cy="11" r="1.3" />
+                            </svg>
+                          </button>
+                          <span><span aria-hidden>{c.emoji}</span> {c.name}</span>
+                        </span>
                         <span className={`pill pill-${st}`}>{STATUS_TEXT[st]}</span>
                       </div>
                       <Progress value={spent} max={limits[c.id]} status={st} label={`Uso do limite de ${c.name}`} />
@@ -144,7 +295,7 @@ function BudgetForm({ budget, suggestion, onSave }: { budget: BudgetT; suggestio
     });
     const parsed: Record<string, number> = {};
     rows.forEach((r) => { const n = parseMoney(r.limit); if (n) parsed[r.id] = n; });
-    onSave({ total: totalCents, limits: parsed });
+    onSave({ total: totalCents, limits: parsed, order: budget.order });
   }
 
   return (
