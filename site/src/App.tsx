@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ConfirmProvider } from './components/Confirm';
 import { TransactionForm } from './components/TransactionForm';
 import { Modal } from './components/ui';
 import { addMonths, currentMonth, monthLabel } from './lib/format';
@@ -231,7 +232,9 @@ function Gate() {
 export default function App() {
   return (
     <StoreProvider>
-      <Gate />
+      <ConfirmProvider>
+        <Gate />
+      </ConfirmProvider>
     </StoreProvider>
   );
 }

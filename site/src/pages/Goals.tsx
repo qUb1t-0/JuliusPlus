@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useConfirm } from '../components/Confirm';
 import { DatePicker } from '../components/DatePicker';
 import { EmojiPicker } from '../components/EmojiPicker';
 import { Empty, Field, Modal, Money, Progress } from '../components/ui';
@@ -84,6 +85,7 @@ function DepositForm({ goal, onDone }: { goal: Goal; onDone: (saved: number) => 
 
 function GoalForm({ goal, onDone }: { goal?: Goal; onDone: () => void }) {
   const { dispatch } = useStore();
+  const ask = useConfirm();
   const [name, setName] = useState(goal?.name ?? '');
   const [emoji, setEmoji] = useState(goal?.emoji ?? '🛟');
   const [target, setTarget] = useState(goal ? centsToInput(goal.target) : '');
@@ -112,7 +114,11 @@ function GoalForm({ goal, onDone }: { goal?: Goal; onDone: () => void }) {
         <Field label="Prazo (opcional)"><DatePicker mode="month" value={deadline} min={currentMonth()} onChange={setDeadline} placeholder="Sem prazo" clearable /></Field>
       </div>
       <div className="form-actions">
-        {goal && <button className="btn danger" onClick={() => { if (confirm('Excluir esta meta?')) { dispatch({ type: 'deleteGoal', id: goal.id }); onDone(); } }}>Excluir</button>}
+        {goal && <button className="btn danger" onClick={async () => {
+          if (await ask({ title: `Excluir “${goal.name}”?`, message: 'A meta e o valor guardado nela serão apagados.', confirmLabel: 'Excluir', danger: true })) {
+            dispatch({ type: 'deleteGoal', id: goal.id }); onDone();
+          }
+        }}>Excluir</button>}
         <span className="grow" />
         <button className="btn primary" onClick={save}>Salvar</button>
       </div>

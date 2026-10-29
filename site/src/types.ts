@@ -11,6 +11,7 @@ export interface Category {
   group: string;
   kind: Kind;
   custom?: boolean;
+  archived?: boolean; // excluída pelo usuário, mantida só para o histórico de transações
 }
 
 export interface Transaction {

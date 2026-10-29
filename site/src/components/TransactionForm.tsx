@@ -27,7 +27,8 @@ export function TransactionForm({ editing, defaultKind = 'expense', onDone }: { 
   const [note, setNote] = useState(editing?.note ?? '');
   const [submitted, setSubmitted] = useState(false);
 
-  const cats = data.categories.filter((c) => c.kind === kind);
+  // Excluídas não aparecem para novos lançamentos, mas a da transação em edição continua selecionável.
+  const cats = data.categories.filter((c) => c.kind === kind && (!c.archived || c.id === editing?.categoryId));
   const groups = [...new Set(cats.map((c) => c.group))];
   const cents = parseMoney(amount);
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useConfirm } from '../components/Confirm';
 import { DatePicker } from '../components/DatePicker';
 import { EmojiPicker } from '../components/EmojiPicker';
 import { Select } from '../components/Select';
@@ -22,6 +23,7 @@ function createdLabel(date: string): string {
 
 export function Projects() {
   const { data, dispatch } = useStore();
+  const ask = useConfirm();
   const projects = data.projects ?? [];
   const [filter, setFilter] = useState<ProjectStatus | 'all'>('all');
   const [editing, setEditing] = useState<FutureProject | 'new' | null>(null);
@@ -31,8 +33,10 @@ export function Projects() {
     .filter((p) => filter === 'all' || p.status === filter)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
-  function remove(p: FutureProject) {
-    if (confirm(`Apagar o projeto “${p.name}”? Essa ação não pode ser desfeita.`)) dispatch({ type: 'deleteProject', id: p.id });
+  async function remove(p: FutureProject) {
+    if (await ask({ title: `Apagar “${p.name}”?`, message: 'Essa ação não pode ser desfeita.', confirmLabel: 'Apagar', danger: true })) {
+      dispatch({ type: 'deleteProject', id: p.id });
+    }
   }
 
   return (
@@ -123,6 +127,7 @@ const PROJECT_NOTE = 'Projeto Futuro efetivado';
 
 function ProjectForm({ project, onDone }: { project?: FutureProject; onDone: () => void }) {
   const { data, dispatch } = useStore();
+  const ask = useConfirm();
   const [doneAt, setDoneAt] = useState(project?.doneAt ?? todayISO());
   const [emoji, setEmoji] = useState(project?.emoji ?? '🚀');
   const [name, setName] = useState(project?.name ?? '');
@@ -148,7 +153,7 @@ function ProjectForm({ project, onDone }: { project?: FutureProject; onDone: () 
       || (!t.projectId && !!project && t.categoryId === PROJECT_CATEGORY.id && t.note === PROJECT_NOTE && t.description === project.name));
     let transactionId: string | undefined;
     if (status === 'done' && cents) {
-      if (!data.categories.some((c) => c.id === PROJECT_CATEGORY.id)) dispatch({ type: 'upsertCategory', category: PROJECT_CATEGORY });
+      if (!data.categories.some((c) => c.id === PROJECT_CATEGORY.id && !c.archived)) dispatch({ type: 'upsertCategory', category: PROJECT_CATEGORY });
       transactionId = (linked.find((t) => t.id === project?.transactionId && !t.deletedAt) ?? linked.find((t) => !t.deletedAt))?.id ?? uid();
       linked.filter((t) => t.id !== transactionId).forEach((t) => dispatch({ type: 'purgeTransaction', id: t.id }));
       dispatch({
@@ -174,8 +179,8 @@ function ProjectForm({ project, onDone }: { project?: FutureProject; onDone: () 
     onDone();
   }
 
-  function remove() {
-    if (!project || !confirm(`Apagar o projeto “${project.name}”? Essa ação não pode ser desfeita.`)) return;
+  async function remove() {
+    if (!project || !(await ask({ title: `Apagar “${project.name}”?`, message: 'Essa ação não pode ser desfeita.', confirmLabel: 'Apagar', danger: true }))) return;
     dispatch({ type: 'deleteProject', id: project.id });
     onDone();
   }

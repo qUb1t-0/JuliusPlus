@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useConfirm } from '../components/Confirm';
 import { EmojiPicker } from '../components/EmojiPicker';
 import { Empty, Field, Modal, Money, Progress } from '../components/ui';
 import { centsToInput, money, parseMoney, pct, uid } from '../lib/format';
@@ -83,7 +84,9 @@ interface Row { id: string; name: string; emoji: string; limit: string; isNew?: 
 
 function BudgetForm({ budget, suggestion, onSave }: { budget: BudgetT; suggestion: number; onSave: (b: BudgetT) => void }) {
   const { data, dispatch } = useStore();
-  const cats = data.categories.filter((c) => c.kind === 'expense');
+  const ask = useConfirm();
+  const cats = data.categories.filter((c) => c.kind === 'expense' && !c.archived);
+  const [removed, setRemoved] = useState<string[]>([]);
   const [total, setTotal] = useState(budget.total ? centsToInput(budget.total) : '');
   const [rows, setRows] = useState<Row[]>(() => cats.map((c) => ({
     id: c.id, name: c.name, emoji: c.emoji, limit: budget.limits[c.id] ? centsToInput(budget.limits[c.id]) : '',
@@ -92,6 +95,23 @@ function BudgetForm({ budget, suggestion, onSave }: { budget: BudgetT; suggestio
   const [error, setError] = useState('');
   const totalCents = parseMoney(total) ?? 0;
   const allocated = rows.reduce((s, r) => s + (parseMoney(r.limit) ?? 0), 0);
+
+  async function removeRow(r: Row) {
+    if (!r.isNew) {
+      const used = data.transactions.some((t) => t.categoryId === r.id && !t.deletedAt);
+      const ok = await ask({
+        title: `Excluir “${r.name}”?`,
+        message: used
+          ? 'Ela some do orçamento e das opções de novas transações, mas os lançamentos já registrados continuam no histórico com este nome. A exclusão vale ao salvar o orçamento.'
+          : 'A categoria será excluída ao salvar o orçamento.',
+        confirmLabel: 'Excluir', danger: true,
+      });
+      if (!ok) return;
+      setRemoved((ids) => [...ids, r.id]);
+    }
+    setRows((rs) => rs.filter((x) => x.id !== r.id));
+    setError('');
+  }
 
   const update = (id: string, patch: Partial<Row>) => { setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r))); setError(''); };
 
@@ -113,6 +133,8 @@ function BudgetForm({ budget, suggestion, onSave }: { budget: BudgetT; suggestio
     if (bad) return setError(`Valor inválido em ${bad.name}.`);
     if (draft.name.trim()) return setError('Clique em “Adicionar” para incluir o novo campo, ou apague o nome digitado.');
 
+    // Exclusões só valem ao salvar (fechar com Esc ou ✕ desfaz tudo).
+    removed.forEach((id) => dispatch({ type: 'deleteCategory', id }));
     // Nomes e ícones alterados, e campos novos, viram categorias de despesa (aparecem também em Transações).
     rows.forEach((r) => {
       const cat = cats.find((c) => c.id === r.id);
@@ -138,10 +160,12 @@ function BudgetForm({ budget, suggestion, onSave }: { budget: BudgetT; suggestio
               <EmojiPicker value={r.emoji} onChange={(emoji) => update(r.id, { emoji })} label={`Ícone de ${r.name || 'campo'}`} />
               <input className="limit-name-input" value={r.name} maxLength={40} aria-label="Nome do campo" title="Clique para renomear"
                 onChange={(e) => update(r.id, { name: e.target.value })} />
-              {r.isNew && (
-                <button type="button" className="icon-btn" aria-label={`Remover campo ${r.name}`}
-                  onClick={() => setRows((rs) => rs.filter((x) => x.id !== r.id))}>✕</button>
-              )}
+              <button type="button" className="icon-btn limit-remove" aria-label={`Excluir categoria ${r.name}`} title="Excluir categoria"
+                onClick={() => removeRow(r)}>
+                <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" />
+                </svg>
+              </button>
             </div>
             <input inputMode="decimal" placeholder="sem limite" aria-label={`Limite de ${r.name}`} value={r.limit}
               onChange={(e) => update(r.id, { limit: e.target.value })} />

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useConfirm } from '../components/Confirm';
 import { EmojiPicker } from '../components/EmojiPicker';
 import { Select } from '../components/Select';
 import { Empty, Field, Modal, Money } from '../components/ui';
@@ -17,6 +18,7 @@ const ORDER: BillState[] = ['overdue', 'soon', 'upcoming', 'paid'];
 
 export function Bills({ month }: { month: string }) {
   const { data, dispatch } = useStore();
+  const ask = useConfirm();
   const [editing, setEditing] = useState<Bill | 'new' | null>(null);
   const bills = [...data.bills].sort((a, b) => ORDER.indexOf(billState(a, month)) - ORDER.indexOf(billState(b, month)) || a.dueDay - b.dueDay);
   const open = bills.filter((b) => billState(b, month) !== 'paid');
@@ -56,7 +58,11 @@ export function Bills({ month }: { month: string }) {
                   <Money cents={b.amount} />
                   {st === 'paid'
                     ? <button className="btn ghost sm" onClick={() => dispatch({ type: 'toggleBillPaid', id: b.id, month })}>Desfazer</button>
-                    : <button className="btn primary sm" onClick={() => pay(b, confirm(`Lançar “${b.title}” também como despesa em Transações?`))}>Pagar</button>}
+                    : <button className="btn primary sm" onClick={async () => pay(b, await ask({
+                      title: `Pagar “${b.title}”`,
+                      message: 'Quer lançar este pagamento também como despesa em Transações?',
+                      confirmLabel: 'Sim, lançar', cancelLabel: 'Só marcar como paga',
+                    }))}>Pagar</button>}
                 </li>
               );
             })}
@@ -74,6 +80,7 @@ export function Bills({ month }: { month: string }) {
 
 function BillForm({ bill, onDone }: { bill?: Bill; onDone: () => void }) {
   const { dispatch } = useStore();
+  const ask = useConfirm();
   const [title, setTitle] = useState(bill?.title ?? '');
   const [emoji, setEmoji] = useState(bill?.emoji ?? '📄');
   const [amount, setAmount] = useState(bill ? centsToInput(bill.amount) : '');
@@ -105,7 +112,11 @@ function BillForm({ bill, onDone }: { bill?: Bill; onDone: () => void }) {
         </Field>
       </div>
       <div className="form-actions">
-        {bill && <button className="btn danger" onClick={() => { if (confirm('Remover esta conta?')) { dispatch({ type: 'deleteBill', id: bill.id }); onDone(); } }}>Remover</button>}
+        {bill && <button className="btn danger" onClick={async () => {
+          if (await ask({ title: `Remover “${bill.title}”?`, message: 'A conta sai da lista de contas a pagar.', confirmLabel: 'Remover', danger: true })) {
+            dispatch({ type: 'deleteBill', id: bill.id }); onDone();
+          }
+        }}>Remover</button>}
         <span className="grow" />
         <button className="btn primary" onClick={save}>Salvar</button>
       </div>

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useConfirm } from '../components/Confirm';
 import { Select } from '../components/Select';
 import { TransactionForm } from '../components/TransactionForm';
 import { Empty, Modal, Money } from '../components/ui';
@@ -15,6 +16,7 @@ function normalize(s: string) {
 
 export function Transactions({ month }: { month: string }) {
   const { data, dispatch } = useStore();
+  const ask = useConfirm();
   const [query, setQuery] = useState('');
   const [kind, setKind] = useState<'all' | 'income' | 'expense'>('all');
   const [category, setCategory] = useState('');
@@ -47,12 +49,16 @@ export function Transactions({ month }: { month: string }) {
     });
   }
 
-  function remove(t: Transaction) {
+  async function remove(t: Transaction) {
     const group = t.installment
       ? data.transactions.filter((x) => x.installment?.groupId === t.installment!.groupId && !x.deletedAt)
       : [];
     let ids = [t.id];
-    if (group.length > 1 && confirm(`“${t.description}” tem ${group.length} parcelas. OK remove todas; Cancelar remove só a ${t.installment!.number}/${t.installment!.total}.`)) {
+    if (group.length > 1 && await ask({
+      title: 'Remover parcelas',
+      message: `“${t.description}” tem ${group.length} parcelas. Quer mover todas para a lixeira ou só a ${t.installment!.number}/${t.installment!.total}?`,
+      confirmLabel: 'Todas as parcelas', cancelLabel: `Só a ${t.installment!.number}/${t.installment!.total}`,
+    })) {
       dispatch({ type: 'trashInstallmentGroup', groupId: t.installment!.groupId });
       ids = group.map((x) => x.id);
     } else {
@@ -88,7 +94,7 @@ export function Transactions({ month }: { month: string }) {
         <Select aria-label="Filtrar por tipo" value={kind} onChange={setKind}
           options={[{ value: 'all', label: 'Todas' }, { value: 'expense', label: 'Despesas' }, { value: 'income', label: 'Receitas' }]} />
         <Select aria-label="Filtrar por categoria" value={category} onChange={setCategory}
-          options={[{ value: '', label: 'Todas as categorias' }, ...data.categories.map((c) => ({ value: c.id, label: `${c.emoji} ${c.name}` }))]} />
+          options={[{ value: '', label: 'Todas as categorias' }, ...data.categories.map((c) => ({ value: c.id, label: `${c.emoji} ${c.name}${c.archived ? ' (excluída)' : ''}` }))]} />
         <button className="btn ghost" onClick={exportCsv} disabled={!list.length}>Exportar CSV</button>
         <button className="btn ghost" onClick={() => setShowTrash(true)}>Lixeira{trash.length ? ` (${trash.length})` : ''}</button>
       </div>
@@ -160,12 +166,20 @@ export function Transactions({ month }: { month: string }) {
                   <Money cents={t.amount} />
                   <button className="btn ghost sm" onClick={() => dispatch({ type: 'restoreTransaction', id: t.id })}>Restaurar</button>
                   <button className="icon-btn" aria-label={`Excluir ${t.description} definitivamente`}
-                    onClick={() => confirm('Excluir definitivamente? Isso não pode ser desfeito.') && dispatch({ type: 'purgeTransaction', id: t.id })}>✕</button>
+                    onClick={async () => {
+                      if (await ask({ title: `Excluir “${t.description}”?`, message: 'Excluir definitivamente? Isso não pode ser desfeito.', confirmLabel: 'Excluir', danger: true })) {
+                        dispatch({ type: 'purgeTransaction', id: t.id });
+                      }
+                    }}>✕</button>
                 </li>
               ))}
             </ul>
             <div className="form-actions">
-              <button className="btn danger" onClick={() => confirm(`Excluir ${trash.length} itens definitivamente?`) && dispatch({ type: 'emptyTrash' })}>Esvaziar lixeira</button>
+              <button className="btn danger" onClick={async () => {
+                if (await ask({ title: 'Esvaziar lixeira?', message: `Excluir ${trash.length} itens definitivamente? Isso não pode ser desfeito.`, confirmLabel: 'Esvaziar', danger: true })) {
+                  dispatch({ type: 'emptyTrash' });
+                }
+              }}>Esvaziar lixeira</button>
             </div>
           </>
         )}

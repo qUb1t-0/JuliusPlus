@@ -193,7 +193,11 @@ export async function downloadExcel(data: AppData) {
     { header: 'Grupo', key: 'group', width: 18 },
     { header: 'Tipo', key: 'kind', width: 10 },
     { header: 'Personalizada', key: 'custom', width: 14 },
-  ], data.categories.map((c) => ({ name: c.name, group: c.group, kind: KIND[c.kind], custom: c.custom ? 'Sim' : 'Não' })));
+    { header: 'Situação', key: 'state', width: 22 },
+  ], data.categories.map((c) => ({
+    name: c.name, group: c.group, kind: KIND[c.kind], custom: c.custom ? 'Sim' : 'Não',
+    state: c.archived ? 'Excluída (só histórico)' : 'Ativa',
+  })));
 
   if (trash.length) {
     table(wb.addWorksheet('Lixeira'), [...TX_COLS, { header: 'Excluída em', key: 'deleted', width: 14, fmt: DATE }], transactionRows(trash, data));

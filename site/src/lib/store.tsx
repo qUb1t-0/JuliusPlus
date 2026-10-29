@@ -37,6 +37,12 @@ function upsert<T extends { id: string }>(list: T[], item: T): T[] {
   return list.some((x) => x.id === item.id) ? list.map((x) => (x.id === item.id ? item : x)) : [...list, item];
 }
 
+// Categoria excluída só existe para o histórico; sem nenhuma transação apontando para ela, sai de vez.
+function pruneArchived(state: AppData): AppData {
+  const used = new Set(state.transactions.map((t) => t.categoryId));
+  return { ...state, categories: state.categories.filter((c) => !c.archived || used.has(c.id)) };
+}
+
 function reducer(state: AppData, a: Action): AppData {
   switch (a.type) {
     case 'addTransaction': {
@@ -63,9 +69,9 @@ function reducer(state: AppData, a: Action): AppData {
     case 'restoreTransaction':
       return { ...state, transactions: state.transactions.map((t) => (t.id === a.id ? { ...t, deletedAt: undefined } : t)) };
     case 'purgeTransaction':
-      return { ...state, transactions: state.transactions.filter((t) => t.id !== a.id) };
+      return pruneArchived({ ...state, transactions: state.transactions.filter((t) => t.id !== a.id) });
     case 'emptyTrash':
-      return { ...state, transactions: state.transactions.filter((t) => !t.deletedAt) };
+      return pruneArchived({ ...state, transactions: state.transactions.filter((t) => !t.deletedAt) });
     case 'setBudget':
       return { ...state, budget: a.budget };
     case 'upsertBill':
@@ -91,15 +97,16 @@ function reducer(state: AppData, a: Action): AppData {
     case 'upsertCategory':
       return { ...state, categories: upsert(state.categories, a.category) };
     case 'deleteCategory': {
-      // Transações da categoria removida vão para "Outros"/"Renda extra" em vez de ficarem órfãs.
-      const cat = state.categories.find((c) => c.id === a.id);
-      const fallback = cat?.kind === 'income' ? 'freela' : 'outros';
+      // Com transações, a categoria é só arquivada: some das listas de escolha, mas o histórico
+      // continua mostrando nome e ícone originais. Sem transações, é removida de vez.
       const limits = { ...state.budget.limits };
       delete limits[a.id];
+      const used = state.transactions.some((t) => t.categoryId === a.id);
       return {
         ...state,
-        categories: state.categories.filter((c) => c.id !== a.id),
-        transactions: state.transactions.map((t) => (t.categoryId === a.id ? { ...t, categoryId: fallback } : t)),
+        categories: used
+          ? state.categories.map((c) => (c.id === a.id ? { ...c, archived: true } : c))
+          : state.categories.filter((c) => c.id !== a.id),
         budget: { ...state.budget, limits },
       };
     }

@@ -354,6 +354,11 @@ input[aria-invalid='true'], select[aria-invalid='true'] { border-color: var(--ex
 .limit-name-input:hover { border-color: var(--border); }
 .limit-name-input:focus { border-color: var(--brand); background: var(--surface); }
 .limit-item.is-new .limit-name-input { color: var(--brand); }
+/* Lixeira discreta: aparece ao passar o mouse na categoria (sempre visível em telas de toque). */
+.icon-btn.limit-remove { width: 30px; height: 30px; opacity: 0; transition: opacity 0.15s; }
+.limit-item:hover .limit-remove, .limit-item:focus-within .limit-remove { opacity: 1; }
+.icon-btn.limit-remove:hover { background: var(--danger-soft); color: var(--expense); }
+@media (hover: none) { .icon-btn.limit-remove { opacity: 1; } }
 .limit-new { border: 1.5px dashed var(--border); border-radius: 12px; padding: 10px; }
 .limit-new .limit-name-input { border-color: var(--border); background: var(--surface); }
 .limit-new-row { display: flex; gap: 8px; }
@@ -383,6 +388,11 @@ input[aria-invalid='true'], select[aria-invalid='true'] { border-color: var(--ex
 .modal-body { padding: 20px 22px 22px; }
 .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
 .modal-head h2 { font-size: 1.15rem; }
+.confirm-dialog { width: min(420px, calc(100vw - 32px)); }
+.confirm-title { font-size: 1.1rem; margin-bottom: 8px; }
+.confirm-message { color: var(--muted); line-height: 1.5; margin-bottom: 18px; }
+.btn.danger-solid { background: var(--expense); color: #fff; }
+.btn.danger-solid:hover { filter: brightness(1.08); }
 
 .empty { display: grid; justify-items: center; gap: 10px; padding: 24px 12px; text-align: center; }
 .empty-icon { font-size: 2rem; }

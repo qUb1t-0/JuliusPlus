@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useConfirm } from '../components/Confirm';
 import { Select } from '../components/Select';
 import { downloadExcel } from '../lib/exportExcel';
 import { emptyData } from '../lib/seed';
@@ -17,6 +18,7 @@ const SYNC_TEXT: Record<CloudStatus, string> = {
 
 export function Settings() {
   const { data, dispatch } = useStore();
+  const ask = useConfirm();
   const { status, flush } = useCloudSync();
   const [msg, setMsg] = useState('');
   const [newCat, setNewCat] = useState({ name: '', emoji: '🏷️', group: '', kind: 'expense' as Kind });
@@ -32,7 +34,7 @@ export function Settings() {
   }
 
   async function logout() {
-    if (!confirm('Sair da sua conta neste aparelho? Seus dados continuam salvos na sua conta.')) return;
+    if (!(await ask({ title: 'Sair da conta?', message: 'Você sai neste aparelho. Seus dados continuam salvos na sua conta.', confirmLabel: 'Sair' }))) return;
     setLoggingOut(true);
     await flush();
     const res = await signOut();
@@ -57,7 +59,7 @@ export function Settings() {
     }
   }
 
-  const custom = data.categories.filter((c) => c.custom);
+  const custom = data.categories.filter((c) => c.custom && !c.archived);
   const profile = data.profile;
 
   return (
@@ -93,7 +95,11 @@ export function Settings() {
               <li key={c.id} className="chip">
                 {c.emoji} {c.name} <small className="muted">{c.group}</small>
                 <button className="icon-btn" aria-label={`Excluir categoria ${c.name}`}
-                  onClick={() => confirm(`Excluir “${c.name}”? As transações dela irão para ${c.kind === 'income' ? 'Renda extra' : 'Outros'}.`) && dispatch({ type: 'deleteCategory', id: c.id })}>✕</button>
+                  onClick={async () => {
+                    if (await ask({ title: `Excluir “${c.name}”?`, message: 'Ela some das opções, mas as transações já registradas continuam no histórico com esta categoria.', confirmLabel: 'Excluir', danger: true })) {
+                      dispatch({ type: 'deleteCategory', id: c.id });
+                    }
+                  }}>✕</button>
               </li>
             ))}
           </ul>
