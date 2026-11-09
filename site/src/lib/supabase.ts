@@ -9,6 +9,21 @@ const initialUrlParams = new URLSearchParams(window.location.hash.slice(1) || wi
 // Sem as variáveis de ambiente o app funciona só com o armazenamento local.
 export const supabase = url && key ? createClient(url, key) : null;
 
+// Logout por inatividade: guarda neste navegador o horário da última atividade.
+const ACTIVITY_KEY = 'julius-ultima-atividade';
+const IDLE_LIMIT_MS = 1 * 60 * 60 * 1000;
+
+export function markActivity() {
+  try { localStorage.setItem(ACTIVITY_KEY, String(Date.now())); } catch { /* sem armazenamento: ignora */ }
+}
+
+export function idleTooLong(): boolean {
+  try {
+    const last = Number(localStorage.getItem(ACTIVITY_KEY));
+    return last > 0 && Date.now() - last > IDLE_LIMIT_MS;
+  } catch { return false; }
+}
+
 export type SignupInput = { name: string; email: string; phone: string };
 export type StepResult = { ok: true } | { ok: false; message: string };
 
@@ -83,7 +98,9 @@ export async function createPassword(password: string): Promise<StepResult> {
 export async function signInWithPassword(email: string, password: string): Promise<StepResult> {
   if (!supabase) return { ok: false, message: 'Login indisponível neste ambiente.' };
   const { error } = await supabase.auth.signInWithPassword({ email, password });
-  return error ? { ok: false, message: describe(error) } : { ok: true };
+  if (error) return { ok: false, message: describe(error) };
+  markActivity();
+  return { ok: true };
 }
 
 // Dados do app guardados na conta (tabela dados_usuario). `null` = conta ainda sem dados;
@@ -111,6 +128,7 @@ export async function saveUserData(dados: unknown): Promise<boolean> {
 export async function signOut(): Promise<StepResult> {
   if (!supabase) return { ok: true };
   const { error } = await supabase.auth.signOut({ scope: 'local' });
+  try { localStorage.removeItem(ACTIVITY_KEY); } catch { /* ignora */ }
   return error ? { ok: false, message: describe(error) } : { ok: true };
 }
 
@@ -125,6 +143,12 @@ export async function loadSessionState(): Promise<SessionState> {
   if (!supabase) return { status: 'none' };
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return { status: 'none' };
+  // 24h sem atividade neste navegador: sai da conta.
+  if (idleTooLong()) {
+    await signOut();
+    return { status: 'none' };
+  }
+  markActivity();
   const { data } = await supabase.from('cadastros').select('nome, email, celular').eq('user_id', session.user.id).maybeSingle();
   if (!data) return { status: 'none' };
   const input = { name: data.nome, email: data.email, phone: data.celular };

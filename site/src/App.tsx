@@ -3,9 +3,13 @@ import { ConfirmProvider } from './components/Confirm';
 import { TransactionForm } from './components/TransactionForm';
 import { Modal } from './components/ui';
 import { addMonths, currentMonth, monthLabel } from './lib/format';
-import { CloudSync } from './lib/cloudSync';
+import { CloudSync, useCloudSync } from './lib/cloudSync';
+import { emptyData } from './lib/seed';
 import { isAppData, StoreProvider, useStore } from './lib/store';
-import { fetchUserData, isPasswordRecoveryLink, linkErrorFromUrl, loadSessionState, supabase, type SessionState } from './lib/supabase';
+import {
+  fetchUserData, idleTooLong, isPasswordRecoveryLink, linkErrorFromUrl, loadSessionState, markActivity, signOut, supabase,
+  type SessionState,
+} from './lib/supabase';
 import { LoadingScreen } from './components/LoadingScreen';
 import { ThemeToggle } from './components/ThemeToggle';
 import { Bills } from './pages/Bills';
@@ -74,6 +78,35 @@ function Shell() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
+
+  // Atividade renova o prazo; 24h sem atividade neste navegador = sai da conta.
+  const { flush } = useCloudSync();
+  useEffect(() => {
+    let lastMark = 0;
+    const onActivity = () => {
+      if (Date.now() - lastMark < 60_000) return; // grava no máximo 1x por minuto
+      lastMark = Date.now();
+      markActivity();
+    };
+    const events = ['pointerdown', 'keydown', 'scroll', 'touchstart'] as const;
+    events.forEach((e) => window.addEventListener(e, onActivity, { passive: true }));
+
+    const timer = setInterval(async () => {
+      if (!idleTooLong()) return;
+      clearInterval(timer);
+      await flush();
+      await signOut();
+      // Ao entrar de novo, o app abre no Início; o aparelho é limpo como no botão "Sair".
+      window.history.replaceState(null, '', window.location.pathname);
+      dispatch({ type: 'replaceAll', data: emptyData() });
+      dispatch({ type: 'clearProfile' });
+    }, 60_000);
+
+    return () => {
+      events.forEach((e) => window.removeEventListener(e, onActivity));
+      clearInterval(timer);
+    };
+  }, [flush, dispatch]);
 
   const go = (p: Page) => {
     window.location.hash = p;
