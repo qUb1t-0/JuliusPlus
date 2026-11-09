@@ -227,6 +227,15 @@ main { padding: 8px 32px 48px; max-width: 1180px; margin: 0 auto; outline: none;
 .budget-list li.dropping { transition: box-shadow 0.2s; }
 .budget-list li.dragging .drag-handle { opacity: 1; color: var(--brand); background: var(--brand-soft); }
 .budget-list.sorting li:not(.dragging) { opacity: 0.8; transition: opacity 0.15s; }
+/* Mesma reorganização nos cards de Projetos Futuros (grade). */
+.sortable-grid .goal-head .drag-handle { margin: -4px -6px 0 0; align-self: flex-start; }
+.sortable-grid > article:hover .drag-handle { opacity: 1; }
+.sortable-grid.sorting { user-select: none; cursor: grabbing; }
+.sortable-grid.sorting .drag-handle { cursor: grabbing; }
+.sortable-grid > article { background: var(--surface); transition: border-color 0.15s, box-shadow 0.15s; }
+.sortable-grid > article.dragging, .sortable-grid > article.dropping { position: relative; z-index: 2; background: var(--surface-2); border-color: var(--brand); will-change: transform; box-shadow: 0 18px 40px rgb(0 0 0 / 35%); }
+.sortable-grid > article.dragging .drag-handle { opacity: 1; color: var(--brand); background: var(--brand-soft); }
+.sortable-grid.sorting > article:not(.dragging) { opacity: 0.8; transition: opacity 0.15s; }
 @media (hover: none) { .drag-handle { opacity: 1; } }
 .pill { font-size: 0.75rem; font-weight: 650; border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
 .pill-ok { background: var(--brand-soft); color: var(--income); }

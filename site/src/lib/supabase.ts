@@ -11,7 +11,7 @@ export const supabase = url && key ? createClient(url, key) : null;
 
 // Logout por inatividade: guarda neste navegador o horário da última atividade.
 const ACTIVITY_KEY = 'julius-ultima-atividade';
-const IDLE_LIMIT_MS = 1 * 60 * 60 * 1000;
+const IDLE_LIMIT_MS = 24 * 60 * 60 * 1000;
 
 export function markActivity() {
   try { localStorage.setItem(ACTIVITY_KEY, String(Date.now())); } catch { /* sem armazenamento: ignora */ }

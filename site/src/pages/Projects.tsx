@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
 import { useConfirm } from '../components/Confirm';
 import { DatePicker } from '../components/DatePicker';
 import { EmojiPicker } from '../components/EmojiPicker';
@@ -29,9 +29,151 @@ export function Projects() {
   const [editing, setEditing] = useState<FutureProject | 'new' | null>(null);
 
   const count = (id: ProjectStatus) => projects.filter((p) => p.status === id).length;
-  const list = [...projects]
-    .filter((p) => filter === 'all' || p.status === filter)
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  // Ordem escolhida arrastando; projetos novos (fora dela) vêm primeiro, do mais recente ao mais antigo.
+  const order = data.projectOrder ?? [];
+  const rank = (id: string) => order.indexOf(id);
+  const sorted = [...projects].sort((a, b) => {
+    const ra = rank(a.id), rb = rank(b.id);
+    if (ra < 0 || rb < 0) return ra < 0 && rb < 0 ? b.createdAt.localeCompare(a.createdAt) : ra < 0 ? -1 : 1;
+    return ra - rb;
+  });
+  const list = sorted.filter((p) => filter === 'all' || p.status === filter);
+
+  // Arrastar pela alça ⠿: a grade se reorganiza ao vivo e a ordem é salva ao soltar.
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [drag, setDrag] = useState<{ id: string; ids: string[] } | null>(null);
+  const byId = new Map(list.map((p) => [p.id, p]));
+  const shown = drag ? drag.ids.map((id) => byId.get(id)!).filter(Boolean) : list;
+
+  // Com filtro ativo, só os cards visíveis trocam de lugar entre si; os demais mantêm a posição.
+  function saveOrder(ids: string[]) {
+    const visible = new Set(ids);
+    let i = 0;
+    dispatch({ type: 'setProjectOrder', order: sorted.map((p) => (visible.has(p.id) ? ids[i++] : p.id)) });
+  }
+
+  // Mesmo efeito do Orçamento, em duas dimensões: o card segue o mouse e os outros deslizam (FLIP).
+  const grab = useRef({ dx: 0, dy: 0, x: 0, y: 0 });
+  const flipFrom = useRef<Map<string, DOMRect> | null>(null);
+  const items = () => (gridRef.current ? [...gridRef.current.children] as HTMLElement[] : []);
+  const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const EASE = 'cubic-bezier(0.2, 0.8, 0.2, 1)';
+
+  function captureRects() {
+    flipFrom.current = new Map(items().map((el) => [el.dataset.id!, el.getBoundingClientRect()]));
+  }
+
+  function placeDragged(id: string) {
+    const el = items().find((x) => x.dataset.id === id);
+    if (!el) return;
+    el.style.transform = '';
+    const r = el.getBoundingClientRect();
+    const g = grab.current;
+    el.style.transform = `translate(${g.x - g.dx - r.left}px, ${g.y - g.dy - r.top}px) scale(1.02)`;
+  }
+
+  const orderKey = shown.map((p) => p.id).join();
+  useLayoutEffect(() => {
+    const from = flipFrom.current;
+    flipFrom.current = null;
+    if (drag) placeDragged(drag.id);
+    if (!from || reduceMotion()) return;
+    for (const el of items()) {
+      if (el.dataset.id === drag?.id) continue;
+      const prev = from.get(el.dataset.id!);
+      if (!prev) continue;
+      el.getAnimations().forEach((a) => a.cancel());
+      const r = el.getBoundingClientRect();
+      const dx = prev.left - r.left, dy = prev.top - r.top;
+      if (Math.abs(dx) > 1 || Math.abs(dy) > 1) el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 240, easing: EASE });
+    }
+    // Só a mudança de ordem dispara a animação; drag é lido no momento.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderKey]);
+
+  function startDrag(e: PointerEvent<HTMLButtonElement>, id: string) {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.currentTarget.focus();
+    const r = e.currentTarget.closest('article')?.getBoundingClientRect();
+    grab.current = { dx: e.clientX - (r?.left ?? e.clientX), dy: e.clientY - (r?.top ?? e.clientY), x: e.clientX, y: e.clientY };
+    setDrag({ id, ids: list.map((p) => p.id) });
+  }
+
+  // Movimento e soltura ouvidos na janela (reordenar move o card no DOM e perderia o pointer capture).
+  const dragHandlers = useRef({ move: moveDrag, end: endDrag });
+  dragHandlers.current = { move: moveDrag, end: endDrag };
+  const dragging = drag?.id;
+  useEffect(() => {
+    if (!dragging) return;
+    const move = (e: globalThis.PointerEvent) => dragHandlers.current.move(e);
+    const end = () => dragHandlers.current.end();
+    addEventListener('pointermove', move);
+    addEventListener('pointerup', end);
+    addEventListener('pointercancel', end);
+    return () => {
+      removeEventListener('pointermove', move);
+      removeEventListener('pointerup', end);
+      removeEventListener('pointercancel', end);
+    };
+  }, [dragging]);
+
+  function moveDrag(e: { clientX: number; clientY: number }) {
+    if (!drag) return;
+    grab.current.x = e.clientX;
+    grab.current.y = e.clientY;
+    // Troca quando o centro do card arrastado entra em outro card: ele assume o lugar daquele.
+    const el = items().find((x) => x.dataset.id === drag.id);
+    const cx = e.clientX - grab.current.dx + (el?.offsetWidth ?? 0) / 2;
+    const cy = e.clientY - grab.current.dy + (el?.offsetHeight ?? 0) / 2;
+    const over = items().find((x) => {
+      if (x.dataset.id === drag.id) return false;
+      const r = x.getBoundingClientRect();
+      return cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom;
+    });
+    if (over) {
+      const ids = drag.ids.filter((id) => id !== drag.id);
+      ids.splice(drag.ids.indexOf(over.dataset.id!), 0, drag.id);
+      captureRects();
+      setDrag({ ...drag, ids });
+    } else {
+      placeDragged(drag.id);
+    }
+  }
+
+  function endDrag() {
+    if (!drag) return;
+    const el = items().find((x) => x.dataset.id === drag.id);
+    if (el) {
+      const visual = el.getBoundingClientRect();
+      el.style.transform = '';
+      const r = el.getBoundingClientRect();
+      const dx = visual.left - r.left, dy = visual.top - r.top;
+      if (!reduceMotion() && (Math.abs(dx) > 1 || Math.abs(dy) > 1)) {
+        el.classList.add('dropping');
+        el.animate([{ transform: `translate(${dx}px, ${dy}px) scale(1.02)` }, { transform: 'none' }], { duration: 220, easing: EASE })
+          .finished.then(() => el.classList.remove('dropping'), () => el.classList.remove('dropping'));
+      }
+    }
+    if (drag.ids.join() !== list.map((p) => p.id).join()) saveOrder(drag.ids);
+    setDrag(null);
+  }
+
+  // Teclado: setas movem o card focado uma posição (←/↑ para trás, →/↓ para frente).
+  function keyMove(e: KeyboardEvent<HTMLButtonElement>, id: string) {
+    const delta = e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? -1 : e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1 : 0;
+    if (!delta) return;
+    e.preventDefault();
+    const ids = list.map((p) => p.id);
+    const from = ids.indexOf(id);
+    const to = from + delta;
+    if (to < 0 || to >= ids.length) return;
+    ids.splice(to, 0, ids.splice(from, 1)[0]);
+    captureRects();
+    saveOrder(ids);
+    const target = e.currentTarget;
+    requestAnimationFrame(() => target.focus());
+  }
 
   async function remove(p: FutureProject) {
     if (await ask({ title: `Apagar “${p.name}”?`, message: 'Essa ação não pode ser desfeita.', confirmLabel: 'Apagar', danger: true })) {
@@ -74,17 +216,28 @@ export function Projects() {
         ) : list.length === 0 ? (
           <Empty icon="🔎" title="Nenhum projeto com essa situação" />
         ) : (
-          <div className="goal-grid">
-            {list.map((p) => {
+          <div ref={gridRef} className={`goal-grid sortable-grid${drag ? ' sorting' : ''}`}>
+            {shown.map((p) => {
               const s = statusOf(p.status);
               return (
-                <article key={p.id} className={`goal project project-${p.status}`}>
+                <article key={p.id} data-id={p.id} className={`goal project project-${p.status}${drag?.id === p.id ? ' dragging' : ''}`}>
                   <header className="goal-head">
                     <span className="goal-emoji" aria-hidden>{p.emoji}</span>
                     <div className="grow">
                       <h3>{p.name}</h3>
                       <small className="muted">criado em {createdLabel(p.createdAt)}</small>
                     </div>
+                    {list.length > 1 && (
+                      <button type="button" className="drag-handle" aria-label={`Reordenar ${p.name} (arraste ou use as setas)`} title="Arraste para reorganizar"
+                        onPointerDown={(e) => startDrag(e, p.id)}
+                        onKeyDown={(e) => keyMove(e, p.id)}>
+                        <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" fill="currentColor">
+                          <circle cx="4.5" cy="3" r="1.3" /><circle cx="9.5" cy="3" r="1.3" />
+                          <circle cx="4.5" cy="7" r="1.3" /><circle cx="9.5" cy="7" r="1.3" />
+                          <circle cx="4.5" cy="11" r="1.3" /><circle cx="9.5" cy="11" r="1.3" />
+                        </svg>
+                      </button>
+                    )}
                   </header>
                   <span className={`pill ${s.pill} project-status`}>{s.icon} {s.label}</span>
                   {p.status === 'done' && p.doneAt && (

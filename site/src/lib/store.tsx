@@ -26,6 +26,7 @@ type Action =
   | { type: 'deleteGoal'; id: string }
   | { type: 'upsertProject'; project: FutureProject }
   | { type: 'deleteProject'; id: string }
+  | { type: 'setProjectOrder'; order: string[] }
   | { type: 'upsertCategory'; category: Category }
   | { type: 'deleteCategory'; id: string }
   | { type: 'setSettings'; settings: Partial<Settings> }
@@ -93,7 +94,9 @@ function reducer(state: AppData, a: Action): AppData {
     case 'upsertProject':
       return { ...state, projects: upsert(state.projects ?? [], a.project) };
     case 'deleteProject':
-      return { ...state, projects: (state.projects ?? []).filter((p) => p.id !== a.id) };
+      return { ...state, projects: (state.projects ?? []).filter((p) => p.id !== a.id), projectOrder: state.projectOrder?.filter((id) => id !== a.id) };
+    case 'setProjectOrder':
+      return { ...state, projectOrder: a.order };
     case 'upsertCategory':
       return { ...state, categories: upsert(state.categories, a.category) };
     case 'deleteCategory': {

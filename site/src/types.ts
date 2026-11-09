@@ -91,5 +91,6 @@ export interface AppData {
   bills: Bill[];
   goals: Goal[];
   projects?: FutureProject[]; // opcional: dados salvos antes da aba existir não têm o campo
+  projectOrder?: string[]; // ordem escolhida arrastando os cards; projetos fora dela aparecem primeiro
   settings: Settings;
 }
