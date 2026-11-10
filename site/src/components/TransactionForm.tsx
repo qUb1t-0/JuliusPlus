@@ -3,6 +3,7 @@ import { centsToInput, money, parseMoney, splitCents, todayISO } from '../lib/fo
 import { useStore } from '../lib/store';
 import type { Kind, Method, Transaction } from '../types';
 import { DatePicker } from './DatePicker';
+import { MoneyInput } from './MoneyInput';
 import { Select } from './Select';
 import { Field } from './ui';
 
@@ -64,7 +65,7 @@ export function TransactionForm({ editing, defaultKind = 'expense', onDone }: { 
       </div>
 
       <Field label="Valor" error={errors.amount}>
-        <input inputMode="decimal" autoFocus placeholder="0,00" value={amount} onChange={(e) => setAmount(e.target.value)} aria-invalid={!!errors.amount} />
+        <MoneyInput autoFocus value={amount} onChange={setAmount} aria-invalid={!!errors.amount} />
       </Field>
       <Field label="Descrição" error={errors.description}>
         <input placeholder="Ex.: Supermercado" maxLength={80} value={description} onChange={(e) => setDescription(e.target.value)} aria-invalid={!!errors.description} />

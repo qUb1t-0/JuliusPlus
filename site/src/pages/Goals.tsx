@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useConfirm } from '../components/Confirm';
 import { DatePicker } from '../components/DatePicker';
 import { EmojiPicker } from '../components/EmojiPicker';
+import { MoneyInput } from '../components/MoneyInput';
 import { Empty, Field, Modal, Money, Progress } from '../components/ui';
 import { centsToInput, currentMonth, money, monthLabel, parseMoney, pct, uid } from '../lib/format';
 import { useStore } from '../lib/store';
@@ -73,7 +74,7 @@ function DepositForm({ goal, onDone }: { goal: Goal; onDone: (saved: number) => 
   return (
     <div className="form">
       <p className="muted">Guardado até agora: {money(goal.saved)}</p>
-      <Field label="Valor" error={error}><input autoFocus inputMode="decimal" placeholder="0,00" value={value} onChange={(e) => { setValue(e.target.value); setError(''); }} /></Field>
+      <Field label="Valor" error={error}><MoneyInput autoFocus value={value} onChange={(v) => { setValue(v); setError(''); }} /></Field>
       <div className="form-actions">
         <button className="btn ghost" onClick={() => apply(-1)}>Retirar</button>
         <button className="btn primary" onClick={() => apply(1)}>Guardar</button>
@@ -110,7 +111,7 @@ function GoalForm({ goal, onDone }: { goal?: Goal; onDone: () => void }) {
         <Field label="Nome" error={errors.name}><input value={name} maxLength={60} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Reserva de emergência" /></Field>
       </div>
       <div className="row-2">
-        <Field label="Valor da meta" error={errors.target}><input inputMode="decimal" value={target} onChange={(e) => setTarget(e.target.value)} placeholder="0,00" /></Field>
+        <Field label="Valor da meta" error={errors.target}><MoneyInput value={target} onChange={setTarget} /></Field>
         <Field label="Prazo (opcional)"><DatePicker mode="month" value={deadline} min={currentMonth()} onChange={setDeadline} placeholder="Sem prazo" clearable /></Field>
       </div>
       <div className="form-actions">

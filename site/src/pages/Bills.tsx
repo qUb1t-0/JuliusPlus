@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useConfirm } from '../components/Confirm';
 import { EmojiPicker } from '../components/EmojiPicker';
 import { Select } from '../components/Select';
+import { MoneyInput } from '../components/MoneyInput';
 import { Empty, Field, Modal, Money } from '../components/ui';
 import { centsToInput, daysInMonth, monthLabel, pad, parseMoney, uid } from '../lib/format';
 import { billState, type BillState } from '../lib/selectors';
@@ -105,7 +106,7 @@ function BillForm({ bill, onDone }: { bill?: Bill; onDone: () => void }) {
         <Field label="Nome" error={errors.title}><input value={title} maxLength={60} onChange={(e) => setTitle(e.target.value)} placeholder="Ex.: Condomínio" /></Field>
       </div>
       <div className="row-2">
-        <Field label="Valor" error={errors.amount}><input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0,00" /></Field>
+        <Field label="Valor" error={errors.amount}><MoneyInput value={amount} onChange={setAmount} /></Field>
         <Field label="Dia do vencimento">
           <Select value={dueDay} onChange={setDueDay}
             options={Array.from({ length: 31 }, (_, i) => i + 1).map((d) => ({ value: d, label: `Dia ${d}` }))} />

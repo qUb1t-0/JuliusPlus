@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type 
 import { useConfirm } from '../components/Confirm';
 import { DatePicker } from '../components/DatePicker';
 import { EmojiPicker } from '../components/EmojiPicker';
+import { MoneyInput } from '../components/MoneyInput';
 import { Select } from '../components/Select';
 import { Empty, Field, Modal, Money } from '../components/ui';
 import { centsToInput, parseMoney, todayISO, uid } from '../lib/format';
@@ -352,7 +353,7 @@ function ProjectForm({ project, onDone }: { project?: FutureProject; onDone: () 
       </Field>
       <div className="row-2">
         <Field label="Investimento estimado (opcional)" error={errors.investment}>
-          <input inputMode="decimal" value={investment} onChange={(e) => setInvestment(e.target.value)} placeholder="0,00" aria-invalid={!!errors.investment} />
+          <MoneyInput value={investment} onChange={setInvestment} aria-invalid={!!errors.investment} />
         </Field>
         <Field label="Situação">
           <Select value={status} onChange={setStatus} options={STATUS.map((s) => ({ value: s.id, label: `${s.icon} ${s.label}` }))} />

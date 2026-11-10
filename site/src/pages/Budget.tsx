@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
 import { useConfirm } from '../components/Confirm';
 import { EmojiPicker } from '../components/EmojiPicker';
+import { MoneyInput } from '../components/MoneyInput';
 import { Empty, Field, Modal, Money, Progress } from '../components/ui';
 import { centsToInput, money, parseMoney, pct, uid } from '../lib/format';
 import { expenseByCategory, monthSummary, pace, statusFor } from '../lib/selectors';
@@ -301,7 +302,7 @@ function BudgetForm({ budget, suggestion, onSave }: { budget: BudgetT; suggestio
   return (
     <div className="form">
       <Field label="Limite total do mês" hint={suggestion > 0 ? `Sugestão: ${money(suggestion)} (80% da renda deste mês)` : undefined} error={error}>
-        <input inputMode="decimal" placeholder="0,00" value={total} onChange={(e) => { setTotal(e.target.value); setError(''); }} />
+        <MoneyInput value={total} onChange={(v) => { setTotal(v); setError(''); }} />
       </Field>
       <p className={`small ${allocated > totalCents ? 'expense' : 'muted'}`}>Distribuído: {money(allocated)} de {money(totalCents)}</p>
       <div className="limits-grid">
@@ -318,8 +319,8 @@ function BudgetForm({ budget, suggestion, onSave }: { budget: BudgetT; suggestio
                 </svg>
               </button>
             </div>
-            <input inputMode="decimal" placeholder="sem limite" aria-label={`Limite de ${r.name}`} value={r.limit}
-              onChange={(e) => update(r.id, { limit: e.target.value })} />
+            <MoneyInput placeholder="sem limite" aria-label={`Limite de ${r.name}`} value={r.limit}
+              onChange={(limit) => update(r.id, { limit })} />
           </div>
         ))}
       </div>
@@ -331,8 +332,8 @@ function BudgetForm({ budget, suggestion, onSave }: { budget: BudgetT; suggestio
               onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addField(); } }} />
           </div>
           <div className="limit-new-row">
-            <input inputMode="decimal" placeholder="sem limite" aria-label="Limite do novo campo" value={draft.limit}
-              onChange={(e) => setDraft({ ...draft, limit: e.target.value })}
+            <MoneyInput placeholder="sem limite" aria-label="Limite do novo campo" value={draft.limit}
+              onChange={(limit) => setDraft({ ...draft, limit })}
               onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addField(); } }} />
             <button type="button" className="btn primary sm" onClick={addField}>+ Adicionar</button>
           </div>
